@@ -1,0 +1,37 @@
+Konto;Bezeichnung;Désignation
+1000;Kasse;Caisse
+1020;Bankguthaben;Avoirs bancaires
+1100;Forderungen aus Lieferungen und Leistungen (Debitoren);Créances résultant de livraisons et prestations (débiteurs)
+1170;Vorsteuer MWST Material, Waren, Dienstleistungen, Energie;Impôt préalable TVA sur matériel, marchandises, prestations, énergie
+1171;Vorsteuer MWST Investitionen, übriger Betriebsaufwand;Impôt préalable TVA sur investissements, autres charges
+1300;Aktive Rechnungsabgrenzungen;Actifs de régularisation
+1500;Maschinen und Apparate;Machines et appareils
+1510;Mobiliar und Einrichtungen;Mobilier et installations
+1520;Büromaschinen, Informatik;Machines de bureau, informatique
+1530;Fahrzeuge;Véhicules
+2000;Verbindlichkeiten aus Lieferungen und Leistungen (Kreditoren);Dettes résultant d'achats et prestations (créanciers)
+2200;Geschuldete MWST (Umsatzsteuer);TVA due
+2270;Verbindlichkeiten Sozialversicherungen;Dettes envers assurances sociales
+2300;Passive Rechnungsabgrenzungen;Passifs de régularisation
+2800;Grund-, Gesellschafter- oder Stammkapital;Capital-actions, capital social
+3200;Handelserlöse;Ventes de marchandises
+3400;Dienstleistungserlöse;Produits des prestations de services
+3800;Erlösminderungen;Déductions sur les ventes
+4000;Materialaufwand;Charges de matériel
+4200;Handelswarenaufwand;Achats de marchandises
+5000;Lohnaufwand;Salaires
+5700;Sozialversicherungsaufwand (AHV, IV, EO, ALV, BVG, UVG);Charges sociales (AVS, AI, APG, AC, LPP, LAA)
+5800;Übriger Personalaufwand;Autres charges de personnel
+6000;Raumaufwand (Miete);Charges de locaux (loyer)
+6100;Unterhalt, Reparaturen, Ersatz;Entretien, réparations, remplacement
+6200;Fahrzeug- und Transportaufwand;Charges de véhicules et de transport
+6300;Sachversicherungen, Abgaben, Gebühren;Assurances-choses, droits, taxes
+6400;Energie- und Entsorgungsaufwand;Charges d'énergie et d'évacuation
+6500;Verwaltungsaufwand (Büromaterial, Porti, Telefon, Treuhand);Charges d'administration (fournitures, port, téléphone, fiduciaire)
+6570;Informatikaufwand inkl. Leasing;Charges informatiques y.c. leasing
+6600;Werbeaufwand;Publicité
+6700;Sonstiger betrieblicher Aufwand;Autres charges d'exploitation
+6800;Abschreibungen;Amortissements
+6900;Finanzaufwand (Zinsen, Bankspesen);Charges financières (intérêts, frais bancaires)
+6950;Finanzertrag;Produits financiers
+8900;Direkte Steuern;Impôts directs

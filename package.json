@@ -1,0 +1,29 @@
+{
+  "name": "gotthard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Swiss-sovereign open-source agentic desktop for SMEs – MVP engine layer and CLI",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "gotthard": "bin/gotthard.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "setup:python": "uv sync --frozen --project packages/gotthard-mcp",
+    "postinstall": "node -e \"try{require('child_process').execSync('uv --version',{stdio:'ignore'});require('child_process').execSync('uv sync --frozen --project packages/gotthard-mcp',{stdio:'inherit'})}catch(e){console.warn('[gotthard] uv not found – install uv, then run: npm run setup:python')}\"",
+    "build:templates": "uv run --frozen --project packages/gotthard-mcp python scripts/build_assets.py templates",
+    "gotthard": "node bin/gotthard.mjs",
+    "test": "npm run test:python && npm run test:node",
+    "test:python": "uv run --frozen --project packages/gotthard-mcp pytest -q packages/gotthard-mcp/tests",
+    "test:node": "node --test test/*.test.mjs",
+    "eval": "node bin/gotthard.mjs eval"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.8.1",
+    "@napi-rs/keyring": "2.1.2",
+    "opencode-ai": "1.19.4"
+  }
+}

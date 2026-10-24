@@ -1,0 +1,64 @@
+[
+  {
+    "id": "u1-bank",
+    "use_case": "U1 Bank statement processing",
+    "prompt": "Kategorisiere alle Transaktionen in den 3 PDFs im Ordner Bankauszuege nach KMU-Kontenrahmen und erstelle eine Excel-Zusammenfassung nach Konto.",
+    "checks": [
+      { "type": "new_file", "glob": "\\.xlsx$" },
+      { "type": "new_file_contains", "glob": "\\.xlsx$", "all": ["6000", "5000", "5700", "6900", "2850"] },
+      { "type": "new_file_contains", "glob": "\\.xlsx$", "all": ["Swisscom", "AXA", "Lohnzahlungen"] }
+    ]
+  },
+  {
+    "id": "u2-letter",
+    "use_case": "U2 Client letter drafting",
+    "prompt": "Entwirf einen Brief an den Klienten Müller AG, in dem du die fehlenden MWST-Unterlagen erklärst. Verwende unsere Briefvorlage.",
+    "checks": [
+      { "type": "new_file", "glob": "\\.docx$" },
+      { "type": "new_file_contains", "glob": "\\.docx$", "all": ["Bahnhofstrasse 12", "Kassabuch", "Freundliche Grüsse"] },
+      { "type": "new_file_not_contains", "glob": "\\.docx$", "any": ["{{", "ß"] }
+    ]
+  },
+  {
+    "id": "u3-triage",
+    "use_case": "U3 Folder triage",
+    "prompt": "Sortiere die Scans im Ordner Eingang in die Klientenordner und benenne sie nach Datum und Dokumenttyp um.",
+    "checks": [
+      { "type": "files_left", "dir": "Eingang", "pattern": "^scan_\\d+\\.pdf$", "max": 0 },
+      { "type": "exists_match", "pattern": "^Klienten/Mueller_AG/2026-02-14_.*\\.pdf$" },
+      { "type": "exists_match", "pattern": "^Klienten/Keller_GmbH/2026-01-20_.*\\.pdf$" },
+      { "type": "exists_match", "pattern": "^Klienten/Baeckerei_Huber/2026-02-03_.*\\.pdf$" },
+      { "type": "log_lines", "log": "moves", "min": 5 }
+    ]
+  },
+  {
+    "id": "u4-qa",
+    "use_case": "U4 Document Q&A",
+    "prompt": "Was haben wir mit dem Klienten Keller über die Honorare für den Abschluss 2025 vereinbart?",
+    "checks": [
+      { "type": "answer_contains", "all": ["2'400", "140"] },
+      { "type": "answer_contains", "all": ["2026-03-12_Mail_Honorar_Abschluss"] },
+      { "type": "no_new_files" }
+    ]
+  },
+  {
+    "id": "u5-checklist",
+    "use_case": "U5 Recurring checklist",
+    "prompt": "Führe die Jahresabschluss-Checkliste 2025 für den Klienten Müller AG durch und liste auf, was fehlt.",
+    "checks": [
+      { "type": "new_file", "glob": "\\.(md|xlsx)$" },
+      { "type": "new_file_contains", "glob": "\\.md$", "all": ["Debitoren", "Kassabuch"] },
+      { "type": "answer_contains", "any": ["Kassabuch", "Kreditoren"] }
+    ]
+  },
+  {
+    "id": "fr-qa",
+    "use_case": "U4 in French",
+    "lang": "fr",
+    "prompt": "Qu'avons-nous convenu avec le client Keller au sujet des honoraires de bouclement 2025 ?",
+    "checks": [
+      { "type": "answer_contains", "all": ["2'400"] },
+      { "type": "answer_contains", "any": ["honoraire", "forfait"] }
+    ]
+  }
+]
