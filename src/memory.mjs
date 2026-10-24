@@ -1,4 +1,3 @@
-// Company memory (F1.5, F6.1, F6.5). memory.md is plain Markdown the user can read and edit.
 import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
@@ -36,7 +35,6 @@ export function ensureMemory(settings, profile) {
   const f = memoryPath(settings.workspace)
   if (!existsSync(f)) writeFileSync(f, renderMemory(settings.lang, profile))
   else if (profile) {
-    // new profile, but keep the approved notes
     const old = readFileSync(f, "utf8")
     const notesAt = Object.values(HEAD).map((h) => old.indexOf(h.notes)).find((i) => i >= 0)
     const fresh = renderMemory(settings.lang, profile)
@@ -60,7 +58,6 @@ export function readMemory(ws) {
   return existsSync(f) ? readFileSync(f, "utf8") : ""
 }
 
-/** Run the memory server's CLI (forget / reindex / status / search). */
 export function memoryCli(settings, args, env = process.env) {
   const r = spawnSync(mcpCommand("gotthard-memory"), args, {
     env: { ...env, GOTTHARD_WORKSPACE: settings.workspace, GOTTHARD_LANG: settings.lang },

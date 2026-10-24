@@ -11,7 +11,6 @@ export const PROMPTS_DIR = join(PKG, "gotthard-preset", "prompts")
 export const PLUGIN_FILE = join(PKG, "gotthard-plugin", "gotthard.js")
 export const MCP_DIR = join(PKG, "gotthard-mcp")
 
-/** Per-user app data (settings, isolated engine state). GOTTHARD_HOME overrides (tests, portable mode). */
 export function appHome() {
   if (process.env.GOTTHARD_HOME) return resolve(process.env.GOTTHARD_HOME)
   const home = homedir()
@@ -28,14 +27,12 @@ export function defaultWorkspace() {
   return join(homedir(), "Documents", "Gotthard")
 }
 
-/** Pinned opencode binary shipped via the opencode-ai npm package (sidecar in the desktop build). */
 export function opencodeBin() {
   const bin = join(REPO, "node_modules", ".bin", platform() === "win32" ? "opencode.cmd" : "opencode")
   if (!existsSync(bin)) throw new Error("opencode engine not installed – run `npm install` in " + REPO)
   return bin
 }
 
-/** Python entry points of the MCP servers (bundled Python runtime in the desktop build). */
 export function mcpCommand(name) {
   const bin = platform() === "win32" ? join(MCP_DIR, ".venv", "Scripts", `${name}.exe`) : join(MCP_DIR, ".venv", "bin", name)
   return bin

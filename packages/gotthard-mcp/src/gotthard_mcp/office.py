@@ -1,5 +1,3 @@
-"""office-tools MCP server: read and create xlsx / docx / pdf inside the workspace (F7.1–F7.5, U3 moves)."""
-
 from __future__ import annotations
 
 import datetime as dt
@@ -10,8 +8,23 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
+from xml.sax.saxutils import escape
 
+import docx
+import openpyxl
+from docx.enum.text import WD_BREAK
+from docx.table import Table as DocxTable
+from docx.text.paragraph import Paragraph as DocxParagraph
 from mcp.server.mcpserver import MCPServer
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.platypus import ListFlowable, ListItem, PageBreak, SimpleDocTemplate, Spacer, TableStyle
+from reportlab.platypus import Paragraph as PdfParagraph
+from reportlab.platypus import Table as PdfTable
 
 from . import readers
 from .common import WorkspaceError, log_event, output_path, rel, resolve_in_workspace, versioned_path, workspace_root
@@ -28,14 +41,11 @@ server = MCPServer(
 TEMPLATE_DIRS_ENV = "GOTTHARD_TEMPLATES"
 
 
-# ---------------------------------------------------------------- reading
-
-
 @server.tool()
 def read_document(path: str, max_chars: int = 60000) -> str:
     """Read text from a PDF, Word (.docx), Excel (.xlsx), CSV, TXT or Markdown file in the workspace.
     PDFs are returned page by page (incl. detected tables), Excel sheet by sheet.
-    Bundled templates (paths from list_templates) can be read too."""
+    Bundled templates can be read by file name, e.g. "kmu-kontenrahmen.csv"."""
     try:
         p = resolve_in_workspace(path, must_exist=True)
     except WorkspaceError:
@@ -45,37 +55,19 @@ def read_document(path: str, max_chars: int = 60000) -> str:
 
 
 @server.tool()
-def list_templates() -> list[dict[str, str]]:
-    """List available templates (user templates in the workspace folder 'Vorlagen' or 'Modeles' first, then bundled ones)."""
-    out = []
-    for d in _template_dirs():
-        for f in sorted(d.glob("*")):
-            if f.suffix.lower() in (".docx", ".xlsx", ".md", ".csv") and not f.name.startswith("~$"):
-                out.append({"name": f.name, "path": str(f), "source": "workspace" if _in_ws(f) else "bundled"})
-    return out
-
-
-# ---------------------------------------------------------------- xlsx
-
-
-@server.tool()
 def create_xlsx(path: str, sheets: list[dict[str, Any]], overwrite: bool = False) -> dict[str, Any]:
     """Create a formatted Excel workbook.
 
     sheets: list of {
       "name": "Zusammenfassung",
-      "columns": ["Datum", "Text", "Konto", "Betrag"],          # header row (optional)
+      "columns": ["Datum", "Text", "Konto", "Betrag"],
       "rows": [["03.01.2026", "Miete", "6000", 2400.0], ...],   # values; strings starting with "=" are formulas
-      "number_format": {"D": "#,##0.00"},                       # optional, per column letter
-      "column_widths": {"B": 40},                                # optional
-      "totals": ["D"]                                            # optional: adds a bold SUM row for these columns
+      "number_format": {"D": "#,##0.00"},
+      "column_widths": {"B": 40},
+      "totals": ["D"]
     }
     Dates as "DD.MM.YYYY" or "YYYY-MM-DD" become real Excel dates. Amounts should be numbers, not text.
     """
-    import openpyxl
-    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-    from openpyxl.utils import get_column_letter
-
     if not sheets:
         raise ValueError("At least one sheet is required")
     out = output_path(path, overwrite, ".xlsx")
@@ -101,7 +93,6 @@ def create_xlsx(path: str, sheets: list[dict[str, Any]], overwrite: bool = False
         for row in rows:
             ws.append([_cell_value(v) for v in (row if isinstance(row, list) else [row])])
         last = ws.max_row
-        # formats
         for row in ws.iter_rows(min_row=start, max_row=last):
             for cell in row:
                 if isinstance(cell.value, (dt.date, dt.datetime)):
@@ -111,7 +102,6 @@ def create_xlsx(path: str, sheets: list[dict[str, Any]], overwrite: bool = False
         for col, fmt in (spec.get("number_format") or {}).items():
             for cell in ws[col.upper()][start - 1 :]:
                 cell.number_format = fmt
-        # models sometimes send Excel serial numbers (46025) for dates – repair date-named columns
         for idx, title in enumerate(columns, 1):
             if not _DATE_HEADER.search(str(title)):
                 continue
@@ -133,7 +123,6 @@ def create_xlsx(path: str, sheets: list[dict[str, Any]], overwrite: bool = False
                 c.border = Border(top=thin)
         if columns and last >= start:
             ws.auto_filter.ref = f"A1:{get_column_letter(max(1, ws.max_column))}{last}"
-        # widths
         widths = {k.upper(): v for k, v in (spec.get("column_widths") or {}).items()}
         for idx in range(1, ws.max_column + 1):
             letter = get_column_letter(idx)
@@ -196,9 +185,6 @@ def _display(v: Any) -> str:
     return str(v)
 
 
-# ---------------------------------------------------------------- docx
-
-
 @server.tool()
 def create_docx(
     path: str,
@@ -216,11 +202,10 @@ def create_docx(
       {"type": "numbered", "items": ["...", "..."]}
       {"type": "table", "rows": [["Kopf", "Kopf"], ["a", "b"]], "header": true}
       {"type": "page_break"}
-    template: path of a .docx template (see list_templates). Placeholders like {{DATUM}} are replaced from
+    template: a .docx in the workspace (e.g. "Vorlagen/Briefvorlage.docx") or a bundled one by name
+      ("Briefvorlage.docx", "Modele_lettre.docx"). Placeholders like {{DATUM}} are replaced from
       `fields`; the blocks are inserted at the paragraph containing {{INHALT}} (or {{BODY}}), else appended.
     """
-    import docx
-
     out = output_path(path, overwrite, ".docx")
     fields = {k.strip("{} ").upper(): str(v) for k, v in (fields or {}).items()}
     if template:
@@ -334,8 +319,6 @@ def _add_block(d, b: dict[str, Any], before=None) -> None:
         if before is not None:
             before._element.addprevious(table._element)
     elif kind == "page_break":
-        from docx.enum.text import WD_BREAK
-
         p = new_par()
         p.add_run().add_break(WD_BREAK.PAGE)
     else:
@@ -368,9 +351,6 @@ def _has_style(d, name) -> bool:
         return True
     except KeyError:
         return False
-
-
-# ---------------------------------------------------------------- pdf
 
 
 @server.tool()
@@ -414,16 +394,12 @@ def _mac_soffice() -> str | None:
 
 
 def _docx_to_blocks(src: Path) -> list[dict[str, Any]]:
-    import docx
-    from docx.table import Table
-    from docx.text.paragraph import Paragraph
-
     d = docx.Document(str(src))
     blocks: list[dict[str, Any]] = []
     for child in d.element.body.iterchildren():
         tag = child.tag.rsplit("}", 1)[-1]
         if tag == "p":
-            p = Paragraph(child, d)
+            p = DocxParagraph(child, d)
             style = (p.style.name if p.style is not None else "") or ""
             if style.startswith("Heading"):
                 lvl = int(style.split()[-1]) if style.split()[-1].isdigit() else 1
@@ -433,20 +409,12 @@ def _docx_to_blocks(src: Path) -> list[dict[str, Any]]:
             else:
                 blocks.append({"type": "paragraph", "text": p.text})
         elif tag == "tbl":
-            t = Table(child, d)
+            t = DocxTable(child, d)
             blocks.append({"type": "table", "rows": [[c.text for c in r.cells] for r in t.rows]})
     return blocks
 
 
 def _render_pdf(out: Path, blocks: list[dict[str, Any]], title: str | None) -> None:
-    from xml.sax.saxutils import escape
-
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib.units import mm
-    from reportlab.platypus import ListFlowable, ListItem, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-
     styles = getSampleStyleSheet()
 
     def md(text: str) -> str:
@@ -456,19 +424,19 @@ def _render_pdf(out: Path, blocks: list[dict[str, Any]], title: str | None) -> N
 
     story: list = []
     if title:
-        story += [Paragraph(md(title), styles["Title"]), Spacer(1, 4 * mm)]
+        story += [PdfParagraph(md(title), styles["Title"]), Spacer(1, 4 * mm)]
     for b in blocks:
         kind = (b.get("type") or "paragraph").lower()
         if kind == "heading":
             lvl = min(max(int(b.get("level", 1)), 1), 3)
-            story.append(Paragraph(md(b.get("text", "")), styles[f"Heading{lvl}"]))
+            story.append(PdfParagraph(md(b.get("text", "")), styles[f"Heading{lvl}"]))
         elif kind in ("bullets", "numbered"):
-            items = [ListItem(Paragraph(md(i), styles["BodyText"])) for i in b.get("items") or []]
+            items = [ListItem(PdfParagraph(md(i), styles["BodyText"])) for i in b.get("items") or []]
             story.append(ListFlowable(items, bulletType="bullet" if kind == "bullets" else "1"))
         elif kind == "table":
-            rows = [[Paragraph(md("" if c is None else c), styles["BodyText"]) for c in r] for r in b.get("rows") or []]
+            rows = [[PdfParagraph(md("" if c is None else c), styles["BodyText"]) for c in r] for r in b.get("rows") or []]
             if rows:
-                t = Table(rows, repeatRows=1 if b.get("header", True) else 0)
+                t = PdfTable(rows, repeatRows=1 if b.get("header", True) else 0)
                 st = [("GRID", (0, 0), (-1, -1), 0.4, colors.grey), ("VALIGN", (0, 0), (-1, -1), "TOP")]
                 if b.get("header", True):
                     st.append(("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E6ECF2")))
@@ -478,12 +446,9 @@ def _render_pdf(out: Path, blocks: list[dict[str, Any]], title: str | None) -> N
             story.append(PageBreak())
         else:
             for chunk in str(b.get("text", "")).split("\n\n"):
-                story.append(Paragraph(md(chunk), styles["BodyText"]))
+                story.append(PdfParagraph(md(chunk), styles["BodyText"]))
     doc = SimpleDocTemplate(str(out), pagesize=A4, leftMargin=22 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
-    doc.build(story or [Paragraph("", styles["BodyText"])])
-
-
-# ---------------------------------------------------------------- moving (U3)
+    doc.build(story or [PdfParagraph("", styles["BodyText"])])
 
 
 @server.tool()
@@ -496,16 +461,13 @@ def move_file(source: str, destination: str) -> dict[str, Any]:
     dst = resolve_in_workspace(destination)
     if destination.endswith(("/", os.sep)) or dst.is_dir():
         dst = dst / src.name
-    if ".gotthard" in dst.relative_to(workspace_root()).parts:
-        raise WorkspaceError("Moving into .gotthard/ is not allowed")
+    if {".gotthard", ".git"} & set(dst.relative_to(workspace_root()).parts):
+        raise WorkspaceError("Moving into .gotthard/ or .git/ is not allowed")
     dst.parent.mkdir(parents=True, exist_ok=True)
     final = versioned_path(dst)
     shutil.move(str(src), str(final))
     log_event("moves", source=rel(src), destination=rel(final))
     return {"from": rel(src), "to": rel(final), "renamed_to_avoid_overwrite": final != dst}
-
-
-# ---------------------------------------------------------------- helpers
 
 
 def _template_dirs() -> list[Path]:
@@ -520,15 +482,9 @@ def _template_dirs() -> list[Path]:
     return dirs
 
 
-def _in_ws(p: Path) -> bool:
-    root = workspace_root()
-    return root in p.resolve().parents
-
-
 def _find_template(name: str) -> Path:
     cand = Path(name)
     if cand.is_absolute() and cand.exists():
-        # bundled templates live outside the workspace; only allow known template dirs
         if any(d.resolve() in cand.resolve().parents for d in _template_dirs()):
             return cand
         raise WorkspaceError("Template must be in the workspace or a bundled template folder")
@@ -541,7 +497,8 @@ def _find_template(name: str) -> Path:
     for d in _template_dirs():
         if (d / cand.name).exists():
             return d / cand.name
-    raise WorkspaceError(f"Template not found: {name}. Use list_templates.")
+    available = sorted({f.name for d in _template_dirs() for f in d.glob("*.docx") if not f.name.startswith("~$")})
+    raise WorkspaceError(f"Template not found: {name}. Available: {', '.join(available) or 'none'}")
 
 
 def main() -> None:

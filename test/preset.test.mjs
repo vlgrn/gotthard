@@ -4,11 +4,12 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
 
+import { GotthardPlugin } from "../packages/gotthard-plugin/gotthard.js"
+import { buildConfig, materialize } from "../src/preset.mjs"
+import { engineProvider } from "../src/providers.mjs"
+import { DEFAULTS } from "../src/settings.mjs"
+
 process.env.GOTTHARD_HOME = mkdtempSync(join(tmpdir(), "gotthard-test-home-"))
-const { buildConfig, materialize } = await import("../src/preset.mjs")
-const { engineProvider } = await import("../src/providers.mjs")
-const { DEFAULTS } = await import("../src/settings.mjs")
-const { GotthardPlugin } = await import("../packages/gotthard-plugin/gotthard.js")
 
 function settings(over = {}) {
   const s = structuredClone(DEFAULTS)

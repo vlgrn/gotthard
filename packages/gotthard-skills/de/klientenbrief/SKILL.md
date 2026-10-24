@@ -10,7 +10,7 @@ description: Einen Brief an einen Klienten als Word-Dokument (.docx) mit Briefvo
    - Firmengedächtnis (unten im Systemprompt) für Absender, Adresse und Signatur.
    - `search_documents` mit Klientenname + Thema (z. B. «Müller MWST Unterlagen»), relevante Dateien mit `read_document` lesen.
    - Empfängeradresse aus den Dokumenten übernehmen. Fehlt sie, Platzhalter «[Adresse ergänzen]» einsetzen und am Schluss darauf hinweisen.
-2. **Vorlage wählen**: `list_templates`. Eine Vorlage des Benutzers (Quelle «workspace», z. B. `Vorlagen/Briefvorlage.docx`) hat Vorrang vor der mitgelieferten `Briefvorlage.docx`.
+2. **Vorlage wählen**: mit `glob` nach `Vorlagen/*.docx` suchen. Eine eigene Vorlage des Benutzers hat Vorrang; sonst die mitgelieferte `Briefvorlage.docx` verwenden.
 3. **Brief schreiben** – Schweizer Konventionen:
    - `ORT_DATUM`: «Zürich, 24. Oktober 2026» (Ort aus dem Firmenprofil, heutiges Datum).
    - `BETREFF`: kurz und konkret, z. B. «MWST-Abrechnung Q4 2025 – fehlende Unterlagen».

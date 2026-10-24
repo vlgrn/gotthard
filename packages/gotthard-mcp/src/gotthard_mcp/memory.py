@@ -1,11 +1,3 @@
-"""memory MCP server (F6.1–F6.5): company memory (.gotthard/memory.md), approved notes, document search.
-
-Also usable as a CLI by the launcher:
-    gotthard-memory forget "Keller"     # remove notes + exclude matching documents from the index
-    gotthard-memory reindex [--full]
-    gotthard-memory status
-"""
-
 from __future__ import annotations
 
 import json
@@ -55,19 +47,6 @@ def search_documents(query: str, limit: int = 8, folder: str | None = None) -> d
 
 
 @server.tool()
-def index_status() -> dict:
-    """Show how many workspace documents are indexed and whether semantic (embedding) search is active."""
-    return indexer.status()
-
-
-@server.tool()
-def memory_read() -> str:
-    """Return the company memory (.gotthard/memory.md): firm profile and approved notes."""
-    f = memory_file()
-    return f.read_text(encoding="utf-8") if f.exists() else "(empty)"
-
-
-@server.tool()
 def remember(note: str, subject: str | None = None) -> dict:
     """Save ONE short, durable fact to the company memory, e.g. subject="Klient Keller",
     note="Pauschalhonorar CHF 2'400 für den Abschluss 2025 vereinbart (Mail vom 12.03.2026)".
@@ -84,7 +63,6 @@ def remember(note: str, subject: str | None = None) -> dict:
     if heading is None:
         heading = NOTES_HEADINGS.get(lang(), "## Notes")
         text = text.rstrip() + f"\n\n{heading}\n"
-    # append at the end of the notes section
     idx = text.index(heading) + len(heading)
     nxt = re.search(r"\n## ", text[idx:])
     end = idx + nxt.start() if nxt else len(text)
@@ -95,18 +73,7 @@ def remember(note: str, subject: str | None = None) -> dict:
     return {"saved": line}
 
 
-@server.tool()
-def reindex(full: bool = False) -> dict:
-    """Start re-indexing the workspace documents in the background (full=true rebuilds from scratch)."""
-    started = indexer.start_background(full=full)
-    return {"started": started, "status": indexer.status()}
-
-
-# ---------------------------------------------------------------- CLI (used by the launcher)
-
-
 def forget(name: str) -> dict:
-    """Remove every memory note mentioning `name` and exclude/delete matching documents from the index."""
     needle = name.lower()
     removed_notes = 0
     f = memory_file()
@@ -154,7 +121,7 @@ def main() -> None:
     elif cmd == "search" and len(args) > 1:
         print(json.dumps(indexer.search(" ".join(args[1:])), ensure_ascii=False, indent=2))
     else:
-        raise SystemExit(__doc__)
+        raise SystemExit("usage: gotthard-memory [forget <name> | reindex [--full] | status | search <query>]")
 
 
 if __name__ == "__main__":

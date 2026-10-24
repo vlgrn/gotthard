@@ -1,4 +1,3 @@
-// UI strings for the CLI / wizard. DE and FR are the MVP languages (L1); IT falls back to EN for now.
 const T = {
   de: {
     welcome: "Willkommen bei Gotthard – Ihr KI-Assistent für Büroarbeit, lokal auf Ihrem Computer.",

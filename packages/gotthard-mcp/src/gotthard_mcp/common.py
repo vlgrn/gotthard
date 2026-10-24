@@ -1,5 +1,3 @@
-"""Shared helpers: workspace confinement (S4) and versioned output names (F7.5)."""
-
 from __future__ import annotations
 
 import json
@@ -24,7 +22,6 @@ def gotthard_dir() -> Path:
 
 
 def resolve_in_workspace(path: str, *, must_exist: bool = False) -> Path:
-    """Resolve a user/agent supplied path and refuse anything outside the workspace."""
     if not path or "\x00" in path:
         raise WorkspaceError("Empty or invalid path")
     root = workspace_root()
@@ -47,12 +44,10 @@ def rel(p: Path) -> str:
 
 
 def versioned_path(p: Path) -> Path:
-    """Return p if free, else p_v2, p_v3, ... (never silently overwrite)."""
     if not p.exists():
         return p
     stem, suffix = p.stem, p.suffix
     base = stem
-    # foo_v3 -> continue counting from 4
     if "_v" in stem:
         head, _, tail = stem.rpartition("_v")
         if tail.isdigit():
@@ -69,14 +64,13 @@ def output_path(path: str, overwrite: bool, expected_suffix: str) -> Path:
     p = resolve_in_workspace(path)
     if p.suffix.lower() != expected_suffix:
         p = p.with_suffix(expected_suffix)
+    if {".gotthard", ".git"} & set(p.relative_to(workspace_root()).parts):
+        raise WorkspaceError("Writing into .gotthard/ or .git/ is not allowed")
     p.parent.mkdir(parents=True, exist_ok=True)
-    if p.parts and ".gotthard" in p.relative_to(workspace_root()).parts:
-        raise WorkspaceError("Writing into .gotthard/ is not allowed")
     return p if overwrite else versioned_path(p)
 
 
 def log_event(kind: str, **data) -> None:
-    """Append a line to .gotthard/logs/<kind>.jsonl (local audit trail)."""
     try:
         logs = gotthard_dir() / "logs"
         logs.mkdir(exist_ok=True)

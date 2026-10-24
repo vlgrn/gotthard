@@ -10,7 +10,7 @@ description: Rédiger une lettre à un client en document Word (.docx) avec le m
    - Mémoire de l'entreprise (en bas du prompt système) : expéditeur, adresse, signature.
    - `search_documents` avec le nom du client + le sujet (p. ex. « Müller TVA documents »), lire les fichiers pertinents avec `read_document`.
    - Reprendre l'adresse du destinataire depuis les documents. Si elle manque, mettre « [adresse à compléter] » et le signaler.
-2. **Choisir le modèle** : `list_templates`. Un modèle de l'utilisateur (source « workspace », p. ex. `Modeles/Modele_lettre.docx`) a priorité sur le `Modele_lettre.docx` fourni.
+2. **Choisir le modèle** : chercher avec `glob` `Modeles/*.docx` et `Vorlagen/*.docx`. Un modèle de l'utilisateur a priorité ; sinon utiliser le `Modele_lettre.docx` fourni.
 3. **Rédiger** – usages suisses romands :
    - `ORT_DATUM` : « Lausanne, le 24 octobre 2026 » (lieu du profil de l'entreprise, date du jour).
    - `BETREFF` : court et précis, p. ex. « Décompte TVA T4 2025 – documents manquants ».

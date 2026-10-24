@@ -1,7 +1,6 @@
-// Starts the bundled opencode engine for the active workspace with an isolated, locked-down environment.
-import { spawn } from "node:child_process"
+import { execFileSync, spawn } from "node:child_process"
 import { randomBytes } from "node:crypto"
-import { existsSync, mkdirSync } from "node:fs"
+import { appendFileSync, existsSync, mkdirSync } from "node:fs"
 import { createServer } from "node:net"
 import { join } from "node:path"
 import { ensureMemory } from "./memory.mjs"
@@ -10,13 +9,6 @@ import { materialize } from "./preset.mjs"
 import { embedConfig } from "./providers.mjs"
 import { getSecret } from "./secrets.mjs"
 
-/**
- * Environment for the engine process:
- * - XDG dirs point into the app's own engine home, so the user's personal opencode config, auth and sessions
- *   are never read and Gotthard sessions don't leak into them (M7)
- * - project-level config in client folders is ignored (a folder can't loosen permissions)
- * - no model catalog fetch, no update check, no LSP downloads, no Claude Code compat (S1)
- */
 export function engineEnv(settings, extra = {}) {
   const home = engineHome()
   const dirs = { XDG_CONFIG_HOME: "config", XDG_DATA_HOME: "data", XDG_STATE_HOME: "state", XDG_CACHE_HOME: "cache" }
@@ -45,8 +37,21 @@ export function engineEnv(settings, extra = {}) {
   return { env, key }
 }
 
+export function ensureProject(ws) {
+  if (existsSync(join(ws, ".git"))) return
+  const git = (...args) => execFileSync("git", args, { cwd: ws, stdio: "pipe" })
+  try {
+    git("init", "-q")
+    appendFileSync(join(ws, ".git", "info", "exclude"), "\n# Gotthard: the workspace is a project marker only, no file is tracked\n*\n")
+    git("-c", "user.name=Gotthard", "-c", "user.email=gotthard@localhost", "commit", "-q", "--allow-empty", "-m", "Gotthard workspace")
+  } catch (e) {
+    throw new Error(`Could not prepare the workspace (git is required): ${e.message}`)
+  }
+}
+
 export function prepare(settings) {
   if (!existsSync(settings.workspace)) mkdirSync(settings.workspace, { recursive: true })
+  ensureProject(settings.workspace)
   if (!existsSync(mcpCommand("gotthard-office"))) {
     throw new Error("Python tools are not installed. Run: npm run setup:python")
   }
@@ -72,7 +77,6 @@ export function randomPassword() {
   return randomBytes(18).toString("base64url")
 }
 
-/** Run the engine in the foreground (inherits the terminal). Resolves with the exit code. */
 export function runEngine(args, { env, cwd, stdio = "inherit" }) {
   return new Promise((resolve) => {
     const child = spawn(opencodeBin(), args, { env, cwd, stdio })

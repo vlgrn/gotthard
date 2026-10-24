@@ -1,4 +1,3 @@
-// First-run onboarding (F1.1–F1.7). Terminal version of the desktop wizard; same steps and settings.
 import * as p from "@clack/prompts"
 import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, readdirSync } from "node:fs"
@@ -27,7 +26,6 @@ export async function wizard() {
   const prev = loadSettings() || structuredClone(DEFAULTS)
   const settings = structuredClone(prev)
 
-  // F1.1 language
   const lang = bail(
     await p.select({
       message: "Sprache / Langue / Lingua / Language",
@@ -45,7 +43,6 @@ export async function wizard() {
   const s = t(lang)
   p.intro(s.welcome)
 
-  // F1.2 provider
   const kind = bail(
     await p.select({
       message: s.provider,
@@ -56,7 +53,6 @@ export async function wizard() {
   )
   const prov = { ...DEFAULTS.provider, ...(prev.provider.kind === kind ? prev.provider : {}), kind }
 
-  // F1.3 credentials + live test connection
   let key = getSecret(kind)
   let models = []
   for (;;) {
@@ -86,7 +82,6 @@ export async function wizard() {
   }
   setSecret(kind, key)
 
-  // M2/M3/M4 model choice
   const def = PROVIDERS[kind]
   const options = models.map((m) => ({ value: m.id, label: m.id, hint: m.note || (def.recommended.includes(m.id) ? "empfohlen / recommandé" : undefined) }))
   prov.model = bail(await p.select({ message: s.model, initialValue: pickDefault(models, [prov.model, ...def.recommended].filter(Boolean)), options, maxItems: 12 }), s)
@@ -97,7 +92,6 @@ export async function wizard() {
   prov.models = models.map((m) => m.id).slice(0, 50)
   settings.provider = prov
 
-  // F1.4 workspace
   const ws = resolve(
     bail(await p.text({ message: s.workspace, initialValue: prev.workspace || defaultWorkspace() }), s).replace(/^~(?=$|\/)/, process.env.HOME),
   )
@@ -106,7 +100,6 @@ export async function wizard() {
   const empty = readdirSync(ws).filter((f) => !f.startsWith(".")).length === 0
   if (empty && bail(await p.confirm({ message: s.demo, initialValue: true }), s)) createDemo(ws)
 
-  // F1.5 company profile (optional)
   let profile
   if (bail(await p.confirm({ message: s.profile, initialValue: false }), s)) {
     profile = {}
@@ -116,7 +109,6 @@ export async function wizard() {
     }
   }
 
-  // F1.6 privacy summary
   p.note(s.privacy(def.label, def.swiss), s.privacyTitle)
   bail(await p.confirm({ message: s.accept, active: "OK", inactive: "✗", initialValue: true }), s) || process.exit(1)
 

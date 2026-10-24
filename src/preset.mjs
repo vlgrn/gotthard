@@ -1,4 +1,3 @@
-// Generates the engine configuration for one workspace (spec §4 "Config preset", F4.1, M7, S1–S5).
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -30,17 +29,15 @@ export function userSkillsDir() {
   return join(engineHome(), "user-skills")
 }
 
-/** Permissions shared by all agents. Rules are matched in order; later, more specific rules win. */
 function basePermission(trusted) {
   const engine = engineHome()
   return {
     read: { "*": "allow", "*.env": "deny", "*.env.*": "deny", "*/.gotthard/index.db*": "deny" },
-    edit: { "*": "allow", "*/.gotthard/*": "deny", ".gotthard/*": "deny" },
+    edit: { "*": "allow", "*/.gotthard/*": "deny", ".gotthard/*": "deny", "*/.git/*": "deny", ".git/*": "deny" },
     glob: "allow",
     grep: "allow",
     list: "allow",
     todowrite: "allow",
-    // opencode's built-in "customize-opencode" skill is for developers, not for office work
     skill: { "*": "allow", "customize-opencode": "deny" },
     task: "allow",
     question: "allow",
@@ -48,7 +45,6 @@ function basePermission(trusted) {
     bash: trusted ? "allow" : "ask",
     webfetch: "ask",
     websearch: "deny",
-    // S4: nothing outside the workspace, except the engine's own skill and tool-output folders
     external_directory: {
       "*": "deny",
       [join(engine, "config", "opencode", "skills", "*")]: "allow",
@@ -56,7 +52,6 @@ function basePermission(trusted) {
       [join(tmpdir(), "opencode", "*")]: "allow",
     },
     doom_loop: "ask",
-    // F6.2: every memory note is shown to the user for approval – no silent writes
     "gotthard-memory_remember": "ask",
   }
 }
@@ -64,7 +59,7 @@ function basePermission(trusted) {
 const READONLY_DENY = {
   edit: "deny",
   bash: "deny",
-  task: "deny", // sub-agents would bring back write tools
+  task: "deny",
   webfetch: "deny",
   "gotthard-office_create_xlsx": "deny",
   "gotthard-office_create_docx": "deny",
@@ -74,10 +69,6 @@ const READONLY_DENY = {
   "gotthard-memory_remember": "deny",
 }
 
-/**
- * Build the opencode config object for `settings` + workspace.
- * env = extra environment the engine process needs (secrets are passed by env, never written to disk).
- */
 export function buildConfig(settings, { key, embed }) {
   const lang = settings.lang
   const names = AGENT_NAMES[lang] || AGENT_NAMES.en
@@ -138,14 +129,12 @@ export function buildConfig(settings, { key, embed }) {
   return config
 }
 
-/** Write the config and the enabled skills into the isolated engine home. Returns the config dir. */
 export function materialize(settings, ctx) {
   const cfgDir = join(engineHome(), "config", "opencode")
   mkdirSync(cfgDir, { recursive: true })
   const config = buildConfig(settings, ctx)
   writeFileSync(join(cfgDir, "opencode.json"), JSON.stringify(config, null, 2))
 
-  // skills: bundled pack for the UI language + user-imported skills, minus disabled ones
   const skillsOut = join(cfgDir, "skills")
   rmSync(skillsOut, { recursive: true, force: true })
   mkdirSync(skillsOut, { recursive: true })

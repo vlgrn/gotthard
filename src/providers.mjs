@@ -1,6 +1,3 @@
-// Model providers (M1–M5). Everything except Zen goes through the OpenAI-compatible adapter bundled in
-// the engine, so Infomaniak / Ollama / custom endpoints share one code path.
-
 export const INFOMANIAK_BASE = (productId) => `https://api.infomaniak.com/2/ai/${productId}/openai/v1`
 export const OLLAMA_BASE = "http://127.0.0.1:11434"
 const ZEN_MODELS_URL = "https://opencode.ai/zen/v1/models"
@@ -10,7 +7,6 @@ export const PROVIDERS = {
     label: "OpenCode Zen",
     swiss: false,
     note: "Test phase only – models hosted outside Switzerland. Free models work without an account.",
-    // Zen's open-weight models closest to the Infomaniak candidates (Kimi K2.6, Qwen 3.5, GLM)
     recommended: ["kimi-k2.6", "qwen3.6-plus", "glm-5.3", "deepseek-v4-pro", "glm-5.3-flash-free"],
     recommendedSmall: ["glm-5.3-flash-free", "deepseek-v4.1-flash-free", "big-pickle"],
   },
@@ -57,7 +53,6 @@ export function baseURL(p) {
   return "https://opencode.ai/zen/v1"
 }
 
-/** F1.3 "Test connection": returns [{id, note}] or throws with a readable message. */
 export async function listModels(p, key) {
   if (p.kind === "zen") {
     const data = await getJSON(ZEN_MODELS_URL)
@@ -86,7 +81,6 @@ export async function ollamaRunning() {
   }
 }
 
-/** Embedding endpoint for the document index (F6.4). Zen has none -> keyword search only. */
 export function embedConfig(p, key) {
   if (p.kind === "zen") return null
   const model = p.embedModel || PROVIDERS[p.kind].embed
@@ -94,7 +88,6 @@ export function embedConfig(p, key) {
   return { baseURL: baseURL(p), model, key: key || "" }
 }
 
-/** opencode `provider` block + model ids for the generated config. */
 export function engineProvider(p, key, prices = {}) {
   if (p.kind === "zen") {
     return {

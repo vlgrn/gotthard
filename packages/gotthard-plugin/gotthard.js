@@ -1,8 +1,3 @@
-// Gotthard opencode plugin.
-// - F4.4: every permission request/answer is appended to <workspace>/.gotthard/logs/approvals.jsonl
-// - audit trail of tool calls in .gotthard/logs/actions.jsonl (tool name + title, no file contents)
-// - F7.5: the built-in `write` tool may not overwrite an existing file; the agent must create a _v2 or use `edit`
-// Plain JS without imports from @opencode-ai/plugin so opencode never needs to npm-install anything.
 import { appendFileSync, existsSync, mkdirSync } from "node:fs"
 import { isAbsolute, join, resolve } from "node:path"
 
@@ -15,7 +10,6 @@ export const GotthardPlugin = async ({ directory }) => {
       mkdirSync(logDir, { recursive: true })
       appendFileSync(join(logDir, file), JSON.stringify({ ts: new Date().toISOString(), ...data }) + "\n")
     } catch {
-      // logging must never break a run
     }
   }
 

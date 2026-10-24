@@ -84,8 +84,8 @@ packages/
   gotthard-skills/{de,fr}/    5 Swiss skills (U1–U5), written natively in DE and FR
   gotthard-skills/templates/  Briefvorlage.docx, Modele_lettre.docx, kmu-kontenrahmen.csv
   gotthard-mcp/               Python MCP servers
-    office.py                 read_document, create_xlsx, create_docx (templates), create_pdf, convert_to_pdf, move_file, list_templates
-    memory.py                 search_documents, remember (needs approval), memory_read, index_status, reindex
+    office.py                 read_document, create_xlsx, create_docx (templates), create_pdf, convert_to_pdf, move_file
+    memory.py                 search_documents, remember (needs approval)
     indexer.py                local SQLite index: FTS5 + optional embeddings, hybrid ranking
   gotthard-plugin/gotthard.js engine plugin: approval/action audit log, no-overwrite guard
 evals/                        task set + runner for V2/V3

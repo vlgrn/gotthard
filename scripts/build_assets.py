@@ -1,26 +1,21 @@
-"""Build bundled templates and the demo workspace.
-
-    uv run --project packages/gotthard-mcp python scripts/build_assets.py templates
-    uv run --project packages/gotthard-mcp python scripts/build_assets.py demo <target-dir>
-"""
-
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
+import docx
+import openpyxl
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Mm, Pt, RGBColor
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas
+
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / "packages" / "gotthard-skills" / "templates"
 
 
-# ---------------------------------------------------------------- templates
-
-
 def build_letter(path: Path, lang: str) -> None:
-    import docx
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.shared import Mm, Pt, RGBColor
-
     d = docx.Document()
     sec = d.sections[0]
     sec.page_height, sec.page_width = Mm(297), Mm(210)
@@ -39,7 +34,6 @@ def build_letter(path: Path, lang: str) -> None:
     foot.alignment = WD_ALIGN_PARAGRAPH.CENTER
     foot.add_run("{{FUSSZEILE}}").font.size = Pt(8)
 
-    # Swiss window envelope: recipient block on the left at ~45mm
     d.add_paragraph().paragraph_format.space_after = Mm(18)
     d.add_paragraph("{{EMPFAENGER}}")
     p = d.add_paragraph("{{ORT_DATUM}}")
@@ -109,9 +103,6 @@ def build_templates() -> None:
     print("templates written to", TEMPLATES)
 
 
-# ---------------------------------------------------------------- demo workspace
-
-
 BANK = {
     "Bankauszuege/UBS_Kontoauszug_2026-01.pdf": ("UBS Switzerland AG", "CH93 0027 3273 1234 5678 9", "Januar 2026", 48210.35, [
         ("03.01.2026", "Dauerauftrag Immobilien Zürich AG Miete Büro Januar", -2850.00),
@@ -165,11 +156,6 @@ SCANS = [
 
 
 def demo(target: Path) -> None:
-    import openpyxl
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import mm
-    from reportlab.pdfgen import canvas
-
     target.mkdir(parents=True, exist_ok=True)
 
     for rel_path, (bank, iban, period, opening, rows) in BANK.items():
@@ -235,8 +221,6 @@ def demo(target: Path) -> None:
         "Freundliche Grüsse\nPeter Keller\nKeller GmbH, Seestrasse 4, 8810 Horgen\n",
         encoding="utf-8",
     )
-    import docx
-
     nd = docx.Document()
     nd.add_heading("Müller AG – Aktennotiz MWST", 1)
     nd.add_paragraph("Telefonat mit Herrn Thomas Müller am 16.02.2026.")
@@ -281,4 +265,4 @@ if __name__ == "__main__":
     elif len(sys.argv) >= 3 and sys.argv[1] == "demo":
         demo(Path(sys.argv[2]).expanduser().resolve())
     else:
-        raise SystemExit(__doc__)
+        raise SystemExit("usage: build_assets.py templates | demo <target-dir>")

@@ -9,7 +9,7 @@ description: Lire des relevés bancaires ou des justificatifs (PDF, CSV, Excel),
 1. **Liste de tâches** avec todowrite (un point par relevé + imputation + Excel + contrôle).
 2. **Trouver les fichiers** : ceux indiqués ou avec `glob`, p. ex. `**/*releve*.pdf`, `**/*Kontoauszug*.pdf`. Lire chaque fichier en entier avec `read_document`.
 3. **Relever les transactions** – par ligne : date (JJ.MM.AAAA), banque/compte, libellé, montant (débit négatif, crédit positif, en nombre). Noter le solde initial et final de chaque relevé.
-4. **Imputer** selon le plan comptable PME (liste complète : `read_document` sur `kmu-kontenrahmen.csv` via `list_templates`, colonne « Désignation »). Correspondances fréquentes :
+4. **Imputer** selon le plan comptable PME (liste complète : `read_document` avec `kmu-kontenrahmen.csv`, colonne « Désignation »). Correspondances fréquentes :
    | Le libellé contient | Compte |
    |---|---|
    | loyer, ordre permanent immobilier | 6000 Charges de locaux |

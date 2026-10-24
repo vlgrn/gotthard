@@ -8,19 +8,18 @@ export const DEFAULTS = {
   version: 1,
   lang: "de",
   provider: {
-    kind: "zen", // zen | infomaniak | ollama | custom
+    kind: "zen",
     baseURL: "",
     productId: "",
     model: "",
     smallModel: "",
     embedModel: "",
-    models: [], // models offered by the provider (M4)
+    models: [],
   },
   workspace: "",
   recentWorkspaces: [],
-  trusted: {}, // workspace path -> true (F4.3: bash allowed without asking)
+  trusted: {},
   disabledSkills: [],
-  // M6: CHF per 1M tokens, used for the usage estimate. Adjust to the current Infomaniak price list.
   prices: {},
 }
 

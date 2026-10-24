@@ -1,5 +1,3 @@
-// Feasibility / regression eval (spec V2, V3): runs every task on a fresh copy of the demo workspace,
-// headless, with permissions auto-approved, and checks the result against simple rubric rules.
 import { spawn, spawnSync } from "node:child_process"
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -125,7 +123,6 @@ export async function runEval({ model, only, keep } = {}) {
   return results
 }
 
-// allow `node evals/run.mjs`
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   runEval().catch((e) => {
     console.error(e)

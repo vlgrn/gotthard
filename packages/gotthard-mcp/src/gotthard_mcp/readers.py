@@ -1,11 +1,15 @@
-"""Text extraction for PDF, docx, xlsx, csv, txt, md (F7.4). Used by office-tools and the indexer."""
-
 from __future__ import annotations
 
 import csv
 import io
 from dataclasses import dataclass
 from pathlib import Path
+
+import docx
+import openpyxl
+import pdfplumber
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 
 TEXT_SUFFIXES = {".txt", ".md", ".csv", ".tsv", ".json", ".xml", ".html", ".eml"}
 DOC_SUFFIXES = {".pdf", ".docx", ".xlsx", ".xlsm"}
@@ -15,7 +19,7 @@ INDEXABLE = TEXT_SUFFIXES | DOC_SUFFIXES
 
 @dataclass
 class Segment:
-    location: str  # "Seite 2", "Blatt Konten", "" ...
+    location: str
     text: str
 
 
@@ -55,8 +59,6 @@ def to_text(segs: list[Segment]) -> str:
 
 
 def _pdf(path: Path) -> list[Segment]:
-    import pdfplumber
-
     segs = []
     with pdfplumber.open(path) as pdf:
         for i, page in enumerate(pdf.pages, 1):
@@ -67,7 +69,7 @@ def _pdf(path: Path) -> list[Segment]:
                     rows = [" | ".join((c or "").replace("\n", " ") for c in row) for row in t if row]
                     if rows:
                         tables.append("\n".join(rows))
-            except Exception:  # table detection is best effort
+            except Exception:
                 pass
             body = text
             if tables:
@@ -79,10 +81,6 @@ def _pdf(path: Path) -> list[Segment]:
 
 
 def _docx(path: Path) -> list[Segment]:
-    import docx
-    from docx.table import Table
-    from docx.text.paragraph import Paragraph
-
     d = docx.Document(str(path))
     lines: list[str] = []
     body = d.element.body
@@ -109,8 +107,6 @@ def _docx(path: Path) -> list[Segment]:
 
 
 def _xlsx(path: Path) -> list[Segment]:
-    import openpyxl
-
     wb = openpyxl.load_workbook(str(path), data_only=True, read_only=True)
     segs = []
     for ws in wb.worksheets:

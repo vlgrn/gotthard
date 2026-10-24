@@ -9,7 +9,7 @@ description: Bankauszüge oder Belege (PDF, CSV, Excel) auslesen, jede Transakti
 1. **Aufgabenliste** mit todowrite anlegen (ein Punkt pro Auszug + Kategorisieren + Excel + Kontrolle).
 2. **Dateien finden**: die genannten Dateien oder mit `glob` z. B. `**/*Kontoauszug*.pdf`. Jede Datei mit `read_document` vollständig lesen.
 3. **Transaktionen erfassen** – pro Zeile: Datum (TT.MM.JJJJ), Bank/Konto, Buchungstext, Betrag (Belastung negativ, Gutschrift positiv, als Zahl). Anfangs- und Schlusssaldo jedes Auszugs notieren.
-4. **Kontieren** nach KMU-Kontenrahmen (vollständige Liste: `read_document` auf `kmu-kontenrahmen.csv` aus `list_templates`). Häufige Zuordnungen:
+4. **Kontieren** nach KMU-Kontenrahmen (vollständige Liste: `read_document` mit `kmu-kontenrahmen.csv`). Häufige Zuordnungen:
    | Buchungstext enthält | Konto |
    |---|---|
    | Miete, Dauerauftrag Immobilien | 6000 Raumaufwand |

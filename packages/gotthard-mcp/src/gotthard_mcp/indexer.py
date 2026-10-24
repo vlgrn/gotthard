@@ -1,5 +1,3 @@
-"""Local document index (F6.3/F6.4): SQLite FTS5 + optional vector embeddings, hybrid retrieval."""
-
 from __future__ import annotations
 
 import json
@@ -11,6 +9,8 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+import numpy as np
 
 from . import readers
 from .common import gotthard_dir, log_event, rel, workspace_root
@@ -41,11 +41,7 @@ def connect() -> sqlite3.Connection:
     return con
 
 
-# ---------------------------------------------------------------- embeddings
-
-
 class Embedder:
-    """OpenAI-compatible /embeddings client (Infomaniak, Ollama, custom). Disabled when not configured."""
 
     def __init__(self) -> None:
         self.base = (os.environ.get("GOTTHARD_EMBED_BASE_URL") or "").rstrip("/")
@@ -71,9 +67,6 @@ class Embedder:
             self.last_error = str(e)
             log_event("index", level="warn", msg="embedding failed, falling back to keyword search", error=str(e))
             return None
-
-
-# ---------------------------------------------------------------- indexing
 
 
 def chunk(text: str) -> list[str]:
@@ -143,7 +136,7 @@ class Indexer:
     def _run(self, full: bool) -> None:
         try:
             self.index(full=full)
-        except Exception as e:  # never crash the MCP server because of the indexer
+        except Exception as e:
             log_event("index", level="error", error=repr(e))
         finally:
             self.running = False
@@ -213,13 +206,11 @@ class Indexer:
         con.execute("DELETE FROM chunks WHERE path=?", (r,))
         con.execute("DELETE FROM files WHERE path=?", (r,))
 
-    # ------------------------------------------------------------ search
 
     def search(self, query: str, limit: int = 8, folder: str | None = None) -> list[dict]:
         con = connect()
         fts = self._fts(con, query, 40)
         vec = self._vector(con, query, 40)
-        # reciprocal rank fusion
         scores: dict[int, float] = {}
         for ranked in (fts, vec):
             for rank, cid in enumerate(ranked):
@@ -243,7 +234,6 @@ class Indexer:
         words = [w for w in re.findall(r"[\w']+", query.lower()) if len(w) >= 2]
         if not words:
             return []
-        # prefix match helps with German compounds / inflection
         expr = " OR ".join(f'"{w}"*' for w in words)
         try:
             return [r[0] for r in con.execute("SELECT rowid FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY bm25(chunks_fts) LIMIT ?", (expr, k))]
@@ -259,8 +249,6 @@ class Indexer:
         q = self.embedder.embed([query])
         if not q:
             return []
-        import numpy as np
-
         mat = np.vstack([np.frombuffer(b, dtype=np.float32) for _, b in rows])
         qv = np.asarray(q[0], dtype=np.float32)
         if mat.shape[1] != qv.shape[0]:
@@ -288,6 +276,4 @@ class Indexer:
 
 
 def _pack(v: list[float]) -> bytes:
-    import numpy as np
-
     return np.asarray(v, dtype=np.float32).tobytes()

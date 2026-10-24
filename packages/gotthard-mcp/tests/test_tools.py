@@ -1,6 +1,10 @@
 from pathlib import Path
 
+import openpyxl
 import pytest
+
+from gotthard_mcp import memory, office, readers
+from gotthard_mcp.common import WorkspaceError, resolve_in_workspace
 
 TEMPLATES = Path(__file__).resolve().parents[2] / "gotthard-skills" / "templates"
 
@@ -14,8 +18,6 @@ def ws(tmp_path, monkeypatch):
 
 
 def test_confinement(ws):
-    from gotthard_mcp.common import WorkspaceError, resolve_in_workspace
-
     assert resolve_in_workspace("a/b.txt") == ws / "a" / "b.txt"
     for bad in ("../x.txt", "/etc/passwd", "a/../../x"):
         with pytest.raises(WorkspaceError):
@@ -23,10 +25,6 @@ def test_confinement(ws):
 
 
 def test_xlsx_versioning_and_formats(ws):
-    import openpyxl
-
-    from gotthard_mcp import office
-
     sheet = {"name": "Konten", "columns": ["Datum", "Text", "Betrag"],
              "rows": [["03.01.2026", "Miete", -2850.0], ["2026-01-08", "Gutschrift", "4'320.00"]], "totals": ["C"]}
     r1 = office.create_xlsx("out/Summary.xlsx", [sheet])
@@ -43,8 +41,6 @@ def test_xlsx_versioning_and_formats(ws):
 
 
 def test_docx_template_fill(ws):
-    from gotthard_mcp import office, readers
-
     res = office.create_docx(
         "Brief.docx",
         blocks=[{"type": "paragraph", "text": "Es fehlen **drei** Belege."}, {"type": "bullets", "items": ["A", "B"]}],
@@ -57,16 +53,12 @@ def test_docx_template_fill(ws):
 
 
 def test_pdf_and_convert(ws):
-    from gotthard_mcp import office
-
     office.create_docx("x.docx", blocks=[{"type": "heading", "text": "Titel"}, {"type": "table", "rows": [["a", "b"], ["1", "2"]]}])
     assert (ws / office.create_pdf("r.pdf", [{"type": "paragraph", "text": "Hallo"}])["path"]).exists()
     assert (ws / office.convert_to_pdf("x.docx")["path"]).exists()
 
 
 def test_move_never_overwrites(ws):
-    from gotthard_mcp import office
-
     (ws / "Eingang").mkdir()
     (ws / "Eingang/a.pdf").write_text("1")
     (ws / "Eingang/b.pdf").write_text("2")
@@ -77,8 +69,6 @@ def test_move_never_overwrites(ws):
 
 
 def test_memory_remember_forget_and_search(ws):
-    from gotthard_mcp import memory
-
     (ws / ".gotthard").mkdir(exist_ok=True)
     (ws / ".gotthard/memory.md").write_text("# Firmengedächtnis\n\n## Firma\nName: Test\n\n## Notizen\n")
     memory.remember("Pauschalhonorar CHF 2'400 für Abschluss 2025", subject="Keller GmbH")
@@ -100,9 +90,6 @@ def test_memory_remember_forget_and_search(ws):
 
 
 def test_read_bundled_template_but_not_arbitrary_files(ws):
-    from gotthard_mcp import office
-    from gotthard_mcp.common import WorkspaceError
-
     assert "6000" in office.read_document("kmu-kontenrahmen.csv")
     with pytest.raises(WorkspaceError):
         office.read_document("/etc/hosts")

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// Gotthard command line. The desktop app (Tauri shell) drives the same functions; this CLI is the
-// developer / pilot entry point and the place where the engine contract is defined.
 import { spawn } from "node:child_process"
-import { cpSync, existsSync, readFileSync } from "node:fs"
+import { cpSync, existsSync, readFileSync, readdirSync } from "node:fs"
 import { basename, join, resolve } from "node:path"
+import { runEval } from "../evals/run.mjs"
 import { freePort, prepare, randomPassword, runEngine, spawnEngine } from "../src/engine.mjs"
+import { startGateway } from "../src/gateway.mjs"
+import { t } from "../src/i18n.mjs"
 import { memoryCli, memoryPath } from "../src/memory.mjs"
-import { appHome, engineHome, mcpCommand } from "../src/paths.mjs"
+import { appHome, engineHome, mcpCommand, opencodeBin } from "../src/paths.mjs"
 import { AGENT_NAMES, listSkills, userSkillsDir } from "../src/preset.mjs"
 import { PROVIDERS, listModels } from "../src/providers.mjs"
 import { getSecret } from "../src/secrets.mjs"
@@ -83,21 +84,18 @@ async function main() {
     case "web": {
       const s = requireSettings()
       const { env } = prepare(s)
-      const port = Number(opt("port")) || (await freePort())
-      // S3: loopback only, random port, random per-launch password
+      const enginePort = await freePort()
       const password = randomPassword()
       env.OPENCODE_SERVER_PASSWORD = password
-      const url = `http://127.0.0.1:${port}`
-      banner(s, url, password)
-      // `serve` hosts the same web UI as `web` but doesn't open an unauthenticated tab; we open one
-      // with the per-launch credentials embedded so the user never has to type the password.
-      const child = spawnEngine(["serve", "--hostname", "127.0.0.1", "--port", String(port)], { env, cwd: s.workspace })
+      const engineUrl = `http://127.0.0.1:${enginePort}`
+      const child = spawnEngine(["serve", "--hostname", "127.0.0.1", "--port", String(enginePort)], { env, cwd: s.workspace })
       child.stderr.pipe(process.stderr)
       child.stdout.resume()
       stopWith(child)
-      await waitForServer(url, password)
-      console.log("  ready – press Ctrl+C to stop\n")
-      if (!flag("no-open")) openBrowser(`http://opencode:${encodeURIComponent(password)}@127.0.0.1:${port}/`)
+      await waitForServer(engineUrl, password)
+      const { loginUrl } = await startGateway({ port: Number(opt("port")) || 0, engineUrl, password, workspace: s.workspace })
+      banner(s, loginUrl)
+      if (!flag("no-open")) openBrowser(loginUrl)
       break
     }
 
@@ -197,7 +195,7 @@ async function main() {
       const s = requireSettings()
       const [sub = "list", name] = positional()
       if (sub === "list") {
-        const user = existsSync(userSkillsDir()) ? (await import("node:fs")).readdirSync(userSkillsDir()) : []
+        const user = existsSync(userSkillsDir()) ? readdirSync(userSkillsDir()) : []
         for (const n of [...listSkills(s.lang), ...user]) console.log(`${s.disabledSkills.includes(n) ? "  [off]" : "  [on] "} ${n}${user.includes(n) ? "  (imported)" : ""}`)
       } else if (sub === "disable" || sub === "enable") {
         s.disabledSkills = s.disabledSkills.filter((x) => x !== name)
@@ -227,7 +225,6 @@ async function main() {
 
     case "privacy": {
       const s = requireSettings()
-      const { t } = await import("../src/i18n.mjs")
       const def = PROVIDERS[s.provider.kind]
       console.log(t(s.lang).privacy(def.label, def.swiss))
       console.log("\nNetwork destinations: see NETWORK.md")
@@ -235,7 +232,6 @@ async function main() {
     }
 
     case "eval": {
-      const { runEval } = await import("../evals/run.mjs")
       await runEval({ model: opt("model"), only: opt("only"), keep: flag("keep") })
       break
     }
@@ -246,14 +242,12 @@ async function main() {
 }
 
 function memoryEnv(env, s) {
-  // the memory CLI needs the embedding settings that the engine passes to the MCP server
   const { config } = prepare(s)
   const e = { ...env }
   for (const [k, v] of Object.entries(config.mcp["gotthard-memory"].environment)) e[k] = v === "{env:GOTTHARD_ENGINE_KEY}" ? env.GOTTHARD_ENGINE_KEY : v
   return e
 }
 
-/** The engine never outlives the launcher (Ctrl+C, kill, or the desktop shell closing stdin). */
 function stopWith(child) {
   for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(sig, () => child.kill("SIGTERM"))
   process.on("exit", () => child.kill("SIGTERM"))
@@ -278,7 +272,7 @@ function openBrowser(url) {
   spawn(bin, [...a, url], { stdio: "ignore", detached: true }).unref()
 }
 
-function banner(s, url, password) {
+function banner(s, loginUrl) {
   const names = AGENT_NAMES[s.lang] || AGENT_NAMES.en
   console.log(
     [
@@ -287,8 +281,9 @@ function banner(s, url, password) {
       `  workspace : ${s.workspace}`,
       `  model     : ${s.provider.kind} / ${s.provider.model}${PROVIDERS[s.provider.kind].swiss === false ? "   ⚠ not Swiss-hosted (test phase)" : ""}`,
       `  agents    : ${names.main} (default), ${names.readonly}`,
-      `  open      : ${url}`,
-      `  login     : user "opencode", password ${password}`,
+      `  open      : ${loginUrl}`,
+      "",
+      "  ready – press Ctrl+C to stop",
       "",
     ].join("\n"),
   )
@@ -299,7 +294,7 @@ async function doctor() {
   ok(true, `app data: ${appHome()}`)
   let bin
   try {
-    bin = (await import("../src/paths.mjs")).opencodeBin()
+    bin = opencodeBin()
   } catch {}
   ok(!!bin, "engine (opencode) installed", "npm install")
   ok(existsSync(mcpCommand("gotthard-office")), "python tools installed", "npm run setup:python")
