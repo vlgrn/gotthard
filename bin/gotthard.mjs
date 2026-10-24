@@ -4,13 +4,13 @@ import { cpSync, existsSync, readFileSync, readdirSync } from "node:fs"
 import { basename, join, resolve } from "node:path"
 import { runEval } from "../evals/run.mjs"
 import { freePort, prepare, randomPassword, runEngine, spawnEngine } from "../src/engine.mjs"
-import { startGateway } from "../src/gateway.mjs"
 import { t } from "../src/i18n.mjs"
 import { memoryCli, memoryPath } from "../src/memory.mjs"
 import { appHome, engineHome, mcpCommand, opencodeBin } from "../src/paths.mjs"
 import { AGENT_NAMES, listSkills, userSkillsDir } from "../src/preset.mjs"
 import { PROVIDERS, listModels } from "../src/providers.mjs"
 import { getSecret } from "../src/secrets.mjs"
+import { startServer } from "../src/server.mjs"
 import { loadSettings, requireSettings, saveSettings, setWorkspace } from "../src/settings.mjs"
 import { createDemo, pythonReady, wizard } from "../src/wizard.mjs"
 
@@ -83,17 +83,8 @@ async function main() {
     case "start":
     case "web": {
       const s = requireSettings()
-      const { env } = prepare(s)
-      const enginePort = await freePort()
-      const password = randomPassword()
-      env.OPENCODE_SERVER_PASSWORD = password
-      const engineUrl = `http://127.0.0.1:${enginePort}`
-      const child = spawnEngine(["serve", "--hostname", "127.0.0.1", "--port", String(enginePort)], { env, cwd: s.workspace })
-      child.stderr.pipe(process.stderr)
-      child.stdout.resume()
+      const { child, loginUrl } = await startServer(s, { port: Number(opt("port")) || 0 })
       stopWith(child)
-      await waitForServer(engineUrl, password)
-      const { loginUrl } = await startGateway({ port: Number(opt("port")) || 0, engineUrl, password, workspace: s.workspace })
       banner(s, loginUrl)
       if (!flag("no-open")) openBrowser(loginUrl)
       break
@@ -252,19 +243,6 @@ function stopWith(child) {
   for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(sig, () => child.kill("SIGTERM"))
   process.on("exit", () => child.kill("SIGTERM"))
   child.on("exit", (code) => process.exit(code ?? 0))
-}
-
-async function waitForServer(url, password, timeoutMs = 60000) {
-  const auth = "Basic " + Buffer.from(`opencode:${password}`).toString("base64")
-  const end = Date.now() + timeoutMs
-  while (Date.now() < end) {
-    try {
-      const r = await fetch(`${url}/agent`, { headers: { Authorization: auth } })
-      if (r.ok) return
-    } catch {}
-    await new Promise((r) => setTimeout(r, 300))
-  }
-  throw new Error("engine did not start in time")
 }
 
 function openBrowser(url) {

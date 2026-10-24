@@ -1,0 +1,30 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: #fafafa;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background: #0e0e0e;
+  }
+}
+
+body {
+  display: grid;
+  place-items: center;
+}
+
+img {
+  width: 56px;
+  height: 56px;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:" />
+    <title>Gotthard</title>
+    <link rel="stylesheet" href="wizard.css" />
+  </head>
+  <body>
+    <div class="drag"></div>
+    <main>
+      <header>
+        <img class="mark" src="../../packages/gotthard-brand/mark.svg" alt="" />
+        <ol class="steps" id="steps"></ol>
+      </header>
+      <section id="view"></section>
+      <footer>
+        <button class="ghost" id="back" type="button"></button>
+        <span class="spacer"></span>
+        <button class="primary" id="next" type="button"></button>
+      </footer>
+    </main>
+    <script src="wizard.js"></script>
+  </body>
+</html>

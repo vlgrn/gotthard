@@ -29,6 +29,14 @@ Then try the five use cases in the chat:
 | U4 | *Was haben wir mit dem Klienten Keller über die Honorare für den Abschluss 2025 vereinbart?* | CHF 2'400 flat fee, CHF 140/h payroll extra, with file references; proposes a memory note (you approve it) |
 | U5 | *Führe die Jahresabschluss-Checkliste 2025 für den Klienten Müller AG durch und liste auf, was fehlt.* | `Checkliste_….md` + `.xlsx` with present / missing / unclear items |
 
+### Desktop app (macOS, development build)
+
+```bash
+npm run app
+```
+
+The first launch opens the setup wizard (language, model, workspace, company profile, privacy). Afterwards the app starts the engine itself and opens the chat in its own window. *Gotthard → Configuration…* in the menu reopens the wizard.
+
 Prefer the terminal? `./gotthard tui`. For a one-shot run without UI: `./gotthard run "…"`.
 
 Other things to try:
@@ -77,6 +85,7 @@ All non-Zen providers (Infomaniak, Ollama, any OpenAI-compatible endpoint) share
 ## What's inside
 
 ```
+app/                          Electron desktop app: main process, setup wizard UI, loading screen
 bin/gotthard.mjs              CLI (setup, start, tui, run, serve, memory, skills, trust, logs, eval, doctor)
 src/                          launcher: settings, keychain secrets, providers, config preset, engine env
 packages/

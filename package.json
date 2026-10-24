@@ -19,11 +19,16 @@
     "test": "npm run test:python && npm run test:node",
     "test:python": "uv run --frozen --project packages/gotthard-mcp pytest -q packages/gotthard-mcp/tests",
     "test:node": "node --test test/*.test.mjs",
-    "eval": "node bin/gotthard.mjs eval"
+    "eval": "node bin/gotthard.mjs eval",
+    "app": "electron ."
   },
   "dependencies": {
     "@clack/prompts": "1.8.1",
     "@napi-rs/keyring": "2.1.2",
     "opencode-ai": "1.19.4"
-  }
+  },
+  "devDependencies": {
+    "electron": "44.9.3"
+  },
+  "main": "app/main.mjs"
 }
