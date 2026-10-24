@@ -82,6 +82,8 @@ src/                          launcher: settings, keychain secrets, providers, c
 packages/
   gotthard-preset/prompts/    system prompts for the two agents (assistent / nur-lesen) in DE, FR, EN
   gotthard-skills/{de,fr}/    5 Swiss skills (U1–U5), written natively in DE and FR
+  gotthard-skills/common/     office-python: how to edit Word/Excel with Python via bash (forms, tables)
+  gotthard-brand/             logo, colours, title: injected into the web UI by the local gateway
   gotthard-skills/templates/  Briefvorlage.docx, Modele_lettre.docx, kmu-kontenrahmen.csv
   gotthard-mcp/               Python MCP servers
     office.py                 read_document, create_xlsx, create_docx (templates), create_pdf, convert_to_pdf, move_file

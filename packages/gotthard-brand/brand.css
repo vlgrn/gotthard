@@ -1,0 +1,16 @@
+html:root,
+html[data-color-scheme],
+html[data-theme] {
+  --v2-blue-100: #fdeeec;
+  --v2-blue-200: #fbd9d5;
+  --v2-blue-300: #f8c3bd;
+  --v2-blue-400: #f39d93;
+  --v2-blue-500: #ea6b5d;
+  --v2-blue-600: #d52b1e;
+  --v2-blue-700: #bb2418;
+  --v2-blue-800: #a11f15;
+  --v2-blue-900: #861b13;
+  --v2-blue-1000: #6e1711;
+  --v2-blue-1100: #53130e;
+  --v2-blue-1200: #3b0f0b;
+}

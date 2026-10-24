@@ -1,0 +1,11 @@
+{
+  "name": "Gotthard",
+  "short_name": "Gotthard",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [{ "src": "/__gotthard/brand/mark.svg", "sizes": "any", "type": "image/svg+xml" }],
+  "theme_color": "#fafafa",
+  "background_color": "#fafafa",
+  "display": "standalone"
+}
