@@ -1,5 +1,21 @@
 ;(() => {
   const NAME = "Gotthard"
+  const workspace = document.querySelector('meta[name="gotthard-workspace"]')?.content
+
+  if (workspace) {
+    try {
+      const key = "opencode.global.dat:server"
+      const state = JSON.parse(localStorage.getItem(key) || "{}")
+      state.list ??= []
+      state.projects ??= {}
+      state.lastProject ??= {}
+      state.recentlyClosed ??= {}
+      const local = (state.projects.local ??= []).filter((p) => p.worktree)
+      if (!local.some((p) => p.worktree === workspace)) local.unshift({ worktree: workspace, expanded: true })
+      state.projects.local = local
+      localStorage.setItem(key, JSON.stringify(state))
+    } catch {}
+  }
   const WORDMARK =
     '<rect x="196" y="30" width="70" height="70" rx="15" fill="#D52B1E"/>' +
     '<path d="M216.5 86V64.5a14.5 14.5 0 0 1 29 0V86z" fill="#fff"/>' +

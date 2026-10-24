@@ -17,12 +17,14 @@ const BRAND_HEAD =
   '<link rel="stylesheet" href="/__gotthard/brand/brand.css" />' +
   '<script src="/__gotthard/brand/brand.js"></script>'
 
-function brandHtml(html) {
+function brandHtml(html, workspace) {
+  const attr = (workspace || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")
+  const boot = `<meta name="gotthard-workspace" content="${attr}" />`
   return html
     .replace(/<title>[^<]*<\/title>/, "<title>Gotthard</title>")
     .replace(/<link rel="(icon|shortcut icon|apple-touch-icon)"[^>]*>\s*/g, "")
     .replace(/<link rel="manifest"[^>]*>/, '<link rel="manifest" href="/__gotthard/brand/site.webmanifest" />')
-    .replace("</head>", `${BRAND_HEAD}</head>`)
+    .replace("</head>", `${boot}${BRAND_HEAD}</head>`)
 }
 
 function serveBrand(name, res) {
@@ -83,7 +85,7 @@ export function startGateway({ port, engineUrl, password, workspace }) {
         const chunks = []
         ur.on("data", (c) => chunks.push(c))
         ur.on("end", () => {
-          const body = Buffer.from(brandHtml(Buffer.concat(chunks).toString("utf8")))
+          const body = Buffer.from(brandHtml(Buffer.concat(chunks).toString("utf8"), workspace))
           const headers = { ...ur.headers, "content-length": body.length }
           delete headers["transfer-encoding"]
           res.writeHead(ur.statusCode, headers).end(body)
