@@ -19,11 +19,14 @@ export function skillLang(lang) {
 }
 
 export function listSkills(lang) {
-  return ["common", skillLang(lang)].flatMap((sub) =>
-    readdirSync(join(SKILLS_DIR, sub), { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name),
-  )
+  return ["common", skillLang(lang)]
+    .map((sub) => join(SKILLS_DIR, sub))
+    .filter((dir) => existsSync(dir))
+    .flatMap((dir) =>
+      readdirSync(dir, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name),
+    )
 }
 
 export function userSkillsDir() {

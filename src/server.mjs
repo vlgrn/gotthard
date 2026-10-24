@@ -30,7 +30,7 @@ export async function startServer(settings, { port = 0, log = process.stderr } =
     child.kill("SIGTERM")
     throw e
   }
-  const { server, loginUrl } = await startGateway({ port, engineUrl, password, workspace: settings.workspace })
+  const { server, loginUrl } = await startGateway({ port, engineUrl, password, workspace: settings.workspace, lang: settings.lang })
   const stop = () => {
     server.close()
     child.kill("SIGTERM")

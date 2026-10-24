@@ -5,7 +5,7 @@ const UI = {
     providerTitle: "KI-Modell", test: "Verbindung testen", optional: "optional",
     swiss: "Schweiz", testOnly: "nur Test",
     workspaceTitle: "Arbeitsordner", choose: "Ordner wählen …",
-    profileTitle: "Firmenprofil", profileLead: "Optional. Wird lokal im Firmengedächtnis gespeichert und hilft z. B. bei Briefen.",
+    profileTitle: "Praxisprofil", profileLead: "Optional. Wird lokal im Praxisgedächtnis gespeichert und hilft z. B. bei Briefen.",
     privacyTitle: "Datenschutz", python: "Die Python-Werkzeuge fehlen. Führen Sie im Projektordner «npm run setup:python» aus und starten Sie die App neu.",
   },
   fr: {
@@ -14,7 +14,7 @@ const UI = {
     providerTitle: "Modèle d'IA", test: "Tester la connexion", optional: "facultatif",
     swiss: "Suisse", testOnly: "test uniquement",
     workspaceTitle: "Dossier de travail", choose: "Choisir un dossier …",
-    profileTitle: "Profil de l'entreprise", profileLead: "Facultatif. Enregistré localement dans la mémoire de l'entreprise, utile p. ex. pour les lettres.",
+    profileTitle: "Profil du cabinet", profileLead: "Facultatif. Enregistré localement dans la mémoire du cabinet, utile p. ex. pour les lettres.",
     privacyTitle: "Protection des données", python: "Les outils Python manquent. Exécutez « npm run setup:python » dans le dossier du projet, puis relancez l'application.",
   },
   en: {
@@ -23,7 +23,7 @@ const UI = {
     providerTitle: "AI model", test: "Test connection", optional: "optional",
     swiss: "Switzerland", testOnly: "testing only",
     workspaceTitle: "Workspace folder", choose: "Choose folder …",
-    profileTitle: "Company profile", profileLead: "Optional. Stored locally in the company memory, useful e.g. for letters.",
+    profileTitle: "Practice profile", profileLead: "Optional. Stored locally in the practice memory, useful e.g. for letters.",
     privacyTitle: "Privacy", python: "The Python tools are missing. Run 'npm run setup:python' in the project folder and restart the app.",
   },
 }

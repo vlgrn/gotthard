@@ -18,7 +18,7 @@ const HELP = `gotthard – Swiss agentic desktop (MVP CLI)
 
 Setup
   gotthard setup                 first-run wizard (language, model provider, workspace, profile)
-  gotthard demo [dir]            create a demo Treuhand workspace and switch to it
+  gotthard demo [dir]            create a demo practice workspace and switch to it
   gotthard doctor                check installation, provider connection and workspace
 
 Work
@@ -289,7 +289,7 @@ async function doctor() {
   }
   ok(PROVIDERS[s.provider.kind].swiss !== false, "Swiss-hosted provider", "OpenCode Zen is for testing only – switch to Infomaniak before using real client data")
   ok(!s.trusted[s.workspace], "bash requires approval in this workspace", "gotthard untrust")
-  ok(existsSync(memoryPath(s.workspace)), "company memory present")
+  ok(existsSync(memoryPath(s.workspace)), "practice memory present")
   console.log(`engine state: ${engineHome()}`)
 }
 

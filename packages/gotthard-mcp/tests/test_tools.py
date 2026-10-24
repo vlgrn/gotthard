@@ -90,6 +90,6 @@ def test_memory_remember_forget_and_search(ws):
 
 
 def test_read_bundled_template_but_not_arbitrary_files(ws):
-    assert "6000" in office.read_document("kmu-kontenrahmen.csv")
+    assert "EMPFAENGER" in office.read_document("Briefvorlage.docx")
     with pytest.raises(WorkspaceError):
         office.read_document("/etc/hosts")

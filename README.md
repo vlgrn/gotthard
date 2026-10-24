@@ -1,149 +1,71 @@
 # Gotthard
 
-**Swiss-sovereign, open-source agentic assistant for SMEs.** An AI agent that works directly on a local folder – reads bank statements, builds Excel summaries, drafts letters from your letterhead, sorts scans – running on Swiss-hosted open models (Infomaniak) or fully local (Ollama). Files and memory never leave the machine; only model prompts go to the chosen provider.
+**A Swiss-sovereign, open-source AI secretary for medical practices, clinics and hospitals.** Gotthard works directly on a local folder: it reads reports, drafts letters on your letterhead, fills in forms and sorts incoming documents. It runs on Swiss-hosted open models (Infomaniak) or fully local (Ollama). Files and memory stay on the machine; only model prompts go to the chosen provider. It does not make diagnoses.
 
-> Status: **MVP engine layer + CLI** (spec v0.1, [SPEC.md](SPEC.md)). The Tauri desktop shell (fork of OpenWork) is the next milestone; everything it needs from the engine side is here and works today through a browser UI or the terminal.
+> Status: MVP. Desktop app (Electron, development build) and CLI on top of a pinned opencode engine. See [SPEC.md](SPEC.md) for the original plan.
 
----
+## Try it
 
-## Try it in 3 minutes
-
-Requirements: macOS / Linux / Windows with **Node ≥ 20** and **[uv](https://docs.astral.sh/uv/)** (Python is fetched by uv).
+Requirements: macOS with **Node ≥ 20**, **[uv](https://docs.astral.sh/uv/)** and git.
 
 ```bash
 git clone https://github.com/vlgrn/gotthard && cd gotthard
-npm install              # installs the pinned engine (opencode 1.19.4) and the Python tools
-./gotthard setup       # wizard: language → model provider → workspace (+ demo files) → profile
-./gotthard start       # opens the chat in your browser, already logged in
+npm install        # pinned engine (opencode 1.19.4), Electron, Python tools
+npm run app        # desktop app; the first launch opens the setup wizard
 ```
 
-In the wizard, pick **OpenCode Zen** and leave the key empty: the free models work without an account. Accept the demo files when asked; they create a fictional Treuhand office with bank statements, scans and client folders.
+In the wizard, pick **OpenCode Zen** (free models, no account, for fictional data only) and accept the demo files: a fictional practice with patient folders and an inbox of scans. Then try:
 
-Then try the five use cases in the chat:
-
-| # | Prompt (German, works the same in French) | Expected result |
-|---|---|---|
-| U1 | *Kategorisiere alle Transaktionen in den 3 PDFs im Ordner Bankauszuege und erstelle eine Excel-Zusammenfassung nach Konto.* | `Ergebnisse/Kontierung_….xlsx` with transactions, totals per KMU account, balance check |
-| U2 | *Entwirf einen Brief an den Klienten Müller AG, in dem du die fehlenden MWST-Unterlagen erklärst. Verwende unsere Briefvorlage.* | `Klienten/Mueller_AG/Korrespondenz/…_Brief_….docx` on the letterhead template |
-| U3 | *Sortiere die Scans im Ordner Eingang in die Klientenordner und benenne sie nach Datum und Dokumenttyp um.* | files moved to `Klienten/<client>/2026-02-14_Steuerveranlagung_….pdf` + log |
-| U4 | *Was haben wir mit dem Klienten Keller über die Honorare für den Abschluss 2025 vereinbart?* | CHF 2'400 flat fee, CHF 140/h payroll extra, with file references; proposes a memory note (you approve it) |
-| U5 | *Führe die Jahresabschluss-Checkliste 2025 für den Klienten Müller AG durch und liste auf, was fehlt.* | `Checkliste_….md` + `.xlsx` with present / missing / unclear items |
-
-### Desktop app (macOS, development build)
-
-```bash
-npm run app
-```
-
-The first launch opens the setup wizard (language, model, workspace, company profile, privacy). Afterwards the app starts the engine itself and opens the chat in its own window. *Gotthard → Configuration…* in the menu reopens the wizard.
-
-Prefer the terminal? `./gotthard tui`. For a one-shot run without UI: `./gotthard run "…"`.
-
-Other things to try:
-- Switch to the **nur-lesen** agent (agent picker): it can answer but every write/move is blocked.
-- Ask it to run a shell command or fetch a web page: you get an approval prompt (Allow once / Always / Reject).
-- `./gotthard memory show` shows the company memory, including notes you approved. `./gotthard memory forget "Keller"` removes them.
-- `./gotthard logs approvals` / `logs moves` show the local audit trail.
-
-### Automated check of all use cases
-
-```bash
-./gotthard eval            # fresh demo workspace per task, headless, scored against a rubric
-./gotthard eval --model kimi-k2.6 --only u1-bank
-npm test                     # unit tests (Python tools + config/plugin)
-```
-
-This is the spec's feasibility gate (V2) and regression suite (V3): it prints PASS/FAIL per task and the overall pass rate against the 70 % threshold.
-
-Last run (24.10.2026, free model `opencode/glm-5.3-flash-free`): **6/6 tasks passed**, 20–110 s and roughly 22–39k tokens per task.
-
-| Task | Result | Time |
-|---|---|---|
-| u1-bank (3 statements → Excel by account) | PASS 3/3 | 111 s |
-| u2-letter (letter on letterhead) | PASS 3/3 | 67 s |
-| u3-triage (6 scans sorted and renamed) | PASS 5/5 | 48 s |
-| u4-qa (Keller fee agreement) | PASS 3/3 | 28 s |
-| u5-checklist (year-end checklist) | PASS 3/3 | 87 s |
-| fr-qa (same question in French) | PASS 2/2 | 19 s |
-
-The demo set is small and synthetic. The real V2 gate needs the 20 anonymised tasks from customer interviews, run against the Infomaniak models.
-
----
-
-## Switching to Swiss hosting (Infomaniak)
-
-OpenCode Zen is for **testing with fictional data only**: it is not hosted in Switzerland, and `gotthard doctor` warns about it. For real client data:
-
-```bash
-./gotthard setup     # choose "Infomaniak AI", paste API token + product ID, "Test connection" lists models
-```
-
-All non-Zen providers (Infomaniak, Ollama, any OpenAI-compatible endpoint) share one code path: the engine's bundled OpenAI-compatible adapter. Default base URL: `https://api.infomaniak.com/2/ai/<product_id>/openai/v1`. With Infomaniak or Ollama the document index also gets semantic search (embeddings: `bge_multilingual_gemma2` or `bge-m3`). With Zen it falls back to keyword search (SQLite FTS5).
-
----
-
-## What's inside
-
-```
-app/                          Electron desktop app: main process, setup wizard UI, loading screen
-bin/gotthard.mjs              CLI (setup, start, tui, run, serve, memory, skills, trust, logs, eval, doctor)
-src/                          launcher: settings, keychain secrets, providers, config preset, engine env
-packages/
-  gotthard-preset/prompts/    system prompts for the two agents (assistent / nur-lesen) in DE, FR, EN
-  gotthard-skills/{de,fr}/    5 Swiss skills (U1–U5), written natively in DE and FR
-  gotthard-skills/common/     office-python: how to edit Word/Excel with Python via bash (forms, tables)
-  gotthard-brand/             logo, colours, title: injected into the web UI by the local gateway
-  gotthard-skills/templates/  Briefvorlage.docx, Modele_lettre.docx, kmu-kontenrahmen.csv
-  gotthard-mcp/               Python MCP servers
-    office.py                 read_document, create_xlsx, create_docx (templates), create_pdf, convert_to_pdf, move_file
-    memory.py                 search_documents, remember (needs approval)
-    indexer.py                local SQLite index: FTS5 + optional embeddings, hybrid ranking
-  gotthard-plugin/gotthard.js engine plugin: approval/action audit log, no-overwrite guard
-evals/                        task set + runner for V2/V3
-scripts/build_assets.py       builds templates and the demo workspace
-```
-
-### How it maps to the spec
-
-| Spec | Implementation |
+| Prompt | Expected result |
 |---|---|
-| Bundled engine, pinned (§4) | `opencode-ai@1.19.4`, run with isolated `XDG_*` dirs under the app data folder, so it never reads the user's own opencode config, auth or sessions |
-| F1 onboarding | `gotthard setup`: language (OS default), provider with live connection test and model list, workspace, optional demo files, company profile, privacy summary |
-| F3.7 agents | `assistent` (default) and `nur-lesen` (FR: `assistant` / `lecture-seule`); built-in coding agents disabled |
-| F4.1 permissions | read/glob/grep/list/edit inside workspace = allow; bash, webfetch = ask; websearch = deny; anything outside the workspace = deny; `.env` unreadable; `.gotthard/` not editable by the agent |
-| F4.3 trusted mode | `gotthard trust --yes` (per workspace, warning shown) |
-| F4.4 approval log | `.gotthard/logs/approvals.jsonl` (+ `actions`, `moves`, `files`, `memory`) |
-| F5 skills | 5 skills DE + FR; `gotthard skills list/disable/enable/import` |
-| F6.1 company memory | `.gotthard/memory.md`, injected into every session, plain Markdown |
-| F6.2 session notes | `remember` tool is permission-gated: every note is shown and must be approved |
-| F6.3/6.4 document index | background indexing of PDF/docx/xlsx/csv/txt/md into `.gotthard/index.db`; `search_documents` returns passages with paths and pages |
-| F6.5 forget | `gotthard memory forget "<client>"` removes notes and excludes matching documents from the index |
-| F7 file outputs | xlsx (formats, formulas, totals, multiple sheets), docx (from templates with `{{FIELDS}}`, or from scratch), pdf (direct, or docx→pdf via LibreOffice if installed); outputs never overwrite: `_v2`, `_v3` |
-| M1–M5 providers | Zen (testing), Infomaniak, Ollama (detects local install, warns on small models), custom endpoint |
-| M7 | share disabled, autoupdate off, models.dev fetch off, only the configured provider enabled, project-level configs in client folders ignored |
-| S3 | engine listens on 127.0.0.1 only, random port, random per-launch password |
-| S5 | API tokens in the OS keychain (`@napi-rs/keyring`), passed to the engine via env, never written to config |
-| L1 | UI strings and prompts DE/FR, Swiss conventions (ss, CHF 1'234.50, 24.10.2026) |
+| *Seit wann ist Claire Dubois in psychologischer Behandlung und welche Therapie erhält sie?* | answer with the source file |
+| *Sortiere die Scans im Ordner Eingang in die Patientenordner und benenne sie nach Datum und Dokumenttyp um.* | lab report, discharge letter and cost approval moved to the right patient folders, logged |
+| *Schreibe einen Brief an Hans Weber zur Bestätigung seines nächsten Termins. Verwende unsere Briefvorlage.* | `.docx` on the letterhead, marked as draft for review |
+| *Remplis le formulaire Word … avec les données du dossier patient.* | the agent writes and runs Python to fill the form fields, then verifies them |
 
-### Not in this milestone
+A fresh first launch without touching your settings: `GOTTHARD_HOME=/tmp/gotthard-test npm run app`. The menu *Gotthard → Configuration…* reopens the wizard.
 
-- **Desktop app** (Tauri fork of OpenWork, rebranding, approval dialogs in a native UI, memory screen, file panel, signed installers, updater). The CLI's `gotthard serve` already prints `{url, username, password}` as JSON: that is the sidecar contract the desktop shell will use.
-- Bundled Python runtime: currently provided by `uv` from `packages/gotthard-mcp/uv.lock`.
-- OCR for scanned images without a text layer (reported as "no text layer").
-- CHF usage display (M6): per-model prices can be set in `settings.json` → `prices` (CHF per 1M tokens) and show up in the engine's cost figures; a dedicated CHF view comes with the desktop UI.
-- Italian skills and UI (IT currently uses English UI and French skills).
-- Windows is untested; paths for the Python venv on Windows are handled but not verified.
+Terminal instead of the app: `./gotthard setup`, then `./gotthard start` (browser) or `./gotthard tui`.
 
-## Development
+### Checks
 
 ```bash
-npm install                 # also runs uv sync for packages/gotthard-mcp
-npm test
-npm run build:templates     # regenerate docx/csv templates
-GOTTHARD_HOME=/tmp/gh ./gotthard setup   # isolated app data for experiments
+npm test             # unit tests (Python tools, config, plugin)
+./gotthard eval      # demo tasks, headless, scored against a rubric
 ```
 
-Settings live in `~/Library/Application Support/Gotthard` (macOS), `%APPDATA%\Gotthard` (Windows) or `~/.config/gotthard`. `gotthard config` prints the generated engine configuration.
+Last eval run (24.10.2026, free model `glm-5.3-flash-free`): 4/4 tasks passed (dossier question, inbox triage, appointment letter, question in French).
+
+## Swiss hosting
+
+OpenCode Zen is for testing with fictional data only; `./gotthard doctor` warns about it. For real patient data, choose **Infomaniak AI** in the wizard (API token + product ID; the connection test lists the models), or **Ollama** for fully local use. All non-Zen providers use the engine's OpenAI-compatible adapter; only the configured provider is enabled.
+
+## How it works
+
+- **Engine:** opencode, pinned, run with its own isolated config and data folders. Only the workspace folder is accessible; shell commands and web access ask for approval; sharing, update checks and the model catalog download are off.
+- **Agents:** `assistent` (default) and `nur-lesen` (read-only). Medical-secretary prompts in DE/FR/EN: no diagnoses, medical content only from documents, drafts marked for physician review, no health data in the practice memory.
+- **Tools:** `read_document`, `create_xlsx`, `create_docx` (letterhead templates), `create_pdf`, `convert_to_pdf`, `move_file` (never overwrites, logged), `search_documents` (local index), `remember` (practice memory, approved by the user). For anything else the agent writes and runs Python (python-docx, openpyxl, pypdf, pdfplumber, reportlab) via bash, guided by the `office-python` skill.
+- **Desktop:** Electron app with a setup wizard; a local gateway puts the engine behind a per-launch password, logs the browser in with a cookie, and applies the Gotthard branding.
+- **Local data:** `.gotthard/` in the workspace holds `memory.md`, the document index and audit logs (approvals, actions, moves). API keys live in the macOS Keychain.
+
+```
+app/                          Electron app: main process, setup wizard, loading screen
+bin/gotthard.mjs              CLI (setup, start, tui, run, serve, memory, skills, trust, logs, eval, doctor)
+src/                          settings, keychain, providers, engine config, gateway, server
+packages/gotthard-preset/     agent prompts (DE, FR, EN)
+packages/gotthard-skills/     office-python skill, letter templates
+packages/gotthard-mcp/        Python MCP servers: office tools, memory and document index
+packages/gotthard-plugin/     engine plugin: audit log, no-overwrite guard
+packages/gotthard-brand/      logo, colours, help pages
+evals/                        demo task set and runner
+scripts/build_assets.py       letter templates and demo workspace
+```
+
+Not done yet: signed `.dmg` packaging, bundled Python runtime, OCR for scanned images, Windows.
+
+## Privacy
+
+See [PRIVACY.md](PRIVACY.md) (template for practices, DE/FR) and [NETWORK.md](NETWORK.md) (every network destination).
 
 ## License
 

@@ -10,7 +10,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 
 function walk(dir, root = dir, out = []) {
   for (const d of readdirSync(dir, { withFileTypes: true })) {
-    if (d.name === ".gotthard") continue
+    if (d.name === ".gotthard" || d.name === ".git") continue
     const p = join(dir, d.name)
     if (d.isDirectory()) walk(p, root, out)
     else out.push(relative(root, p))

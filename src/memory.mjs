@@ -4,15 +4,15 @@ import { join } from "node:path"
 import { mcpCommand } from "./paths.mjs"
 
 const HEAD = {
-  de: { title: "# Firmengedächtnis", firm: "## Firma", notes: "## Notizen", hint: "<!-- Diese Datei wird jeder Sitzung mitgegeben. Sie können sie jederzeit bearbeiten. -->" },
-  fr: { title: "# Mémoire de l'entreprise", firm: "## Entreprise", notes: "## Notes", hint: "<!-- Ce fichier est transmis à chaque session. Vous pouvez le modifier à tout moment. -->" },
-  en: { title: "# Company memory", firm: "## Firm", notes: "## Notes", hint: "<!-- This file is given to every session. Edit it any time. -->" },
+  de: { title: "# Praxisgedächtnis", firm: "## Praxis", notes: "## Notizen", hint: "<!-- Diese Datei wird jeder Sitzung mitgegeben. Sie können sie jederzeit bearbeiten. -->" },
+  fr: { title: "# Mémoire du cabinet", firm: "## Cabinet", notes: "## Notes", hint: "<!-- Ce fichier est transmis à chaque session. Vous pouvez le modifier à tout moment. -->" },
+  en: { title: "# Practice memory", firm: "## Practice", notes: "## Notes", hint: "<!-- This file is given to every session. Edit it any time. -->" },
 }
 
 const LABELS = {
-  de: { name: "Name", address: "Adresse", languages: "Sprachen", clients: "Typische Klienten", signature: "Signatur" },
-  fr: { name: "Nom", address: "Adresse", languages: "Langues", clients: "Clients typiques", signature: "Signature" },
-  en: { name: "Name", address: "Address", languages: "Languages", clients: "Typical clients", signature: "Signature" },
+  de: { name: "Name", address: "Adresse", languages: "Sprachen", clients: "Fachgebiet", signature: "Signatur" },
+  fr: { name: "Nom", address: "Adresse", languages: "Langues", clients: "Spécialité", signature: "Signature" },
+  en: { name: "Name", address: "Address", languages: "Languages", clients: "Specialty", signature: "Signature" },
 }
 
 export function memoryPath(ws) {
@@ -46,7 +46,7 @@ export function ensureMemory(settings, profile) {
     writeFileSync(
       readme,
       "Gotthard – lokale Daten dieses Arbeitsordners / données locales de ce dossier\n\n" +
-        "memory.md   Firmengedächtnis (bearbeitbar) / mémoire de l'entreprise (modifiable)\n" +
+        "memory.md   Praxisgedächtnis (bearbeitbar) / mémoire du cabinet (modifiable)\n" +
         "index.db    Dokumentenindex (kann gelöscht werden) / index des documents (peut être supprimé)\n" +
         "logs/       Freigaben, Aktionen, Verschiebungen / approbations, actions, déplacements\n",
     )

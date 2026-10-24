@@ -45,7 +45,7 @@ TEMPLATE_DIRS_ENV = "GOTTHARD_TEMPLATES"
 def read_document(path: str, max_chars: int = 60000) -> str:
     """Read text from a PDF, Word (.docx), Excel (.xlsx), CSV, TXT or Markdown file in the workspace.
     PDFs are returned page by page (incl. detected tables), Excel sheet by sheet.
-    Bundled templates can be read by file name, e.g. "kmu-kontenrahmen.csv"."""
+    Bundled templates can be read by file name, e.g. "Briefvorlage.docx"."""
     try:
         p = resolve_in_workspace(path, must_exist=True)
     except WorkspaceError:

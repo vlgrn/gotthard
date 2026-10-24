@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { createServer, request } from "node:http"
 import { connect } from "node:net"
 import { join } from "node:path"
-import { BRAND_DIR } from "./paths.mjs"
+import { BRAND_DIR, REPO } from "./paths.mjs"
 
 const COOKIE = "gotthard_session"
 const BRAND_FILES = {
@@ -11,15 +11,26 @@ const BRAND_FILES = {
   "brand.css": "text/css; charset=utf-8",
   "brand.js": "text/javascript; charset=utf-8",
   "site.webmanifest": "application/manifest+json",
+  "help.css": "text/css; charset=utf-8",
+  "help-de.html": "text/html; charset=utf-8",
+  "help-fr.html": "text/html; charset=utf-8",
+  "help-en.html": "text/html; charset=utf-8",
 }
+const VERSION = JSON.parse(readFileSync(join(REPO, "package.json"), "utf8")).version
 const BRAND_HEAD =
   '<link rel="icon" type="image/svg+xml" href="/__gotthard/brand/mark.svg" />' +
   '<link rel="stylesheet" href="/__gotthard/brand/brand.css" />' +
   '<script src="/__gotthard/brand/brand.js"></script>'
 
-function brandHtml(html, workspace) {
-  const attr = (workspace || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")
-  const boot = `<meta name="gotthard-workspace" content="${attr}" />`
+function attr(v) {
+  return String(v || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")
+}
+
+function brandHtml(html, workspace, lang) {
+  const boot =
+    `<meta name="gotthard-workspace" content="${attr(workspace)}" />` +
+    `<meta name="gotthard-lang" content="${attr(lang)}" />` +
+    `<meta name="gotthard-version" content="${attr(VERSION)}" />`
   return html
     .replace(/<title>[^<]*<\/title>/, "<title>Gotthard</title>")
     .replace(/<link rel="(icon|shortcut icon|apple-touch-icon)"[^>]*>\s*/g, "")
@@ -52,7 +63,7 @@ function upstreamHeaders(req, target, auth) {
   return h
 }
 
-export function startGateway({ port, engineUrl, password, workspace }) {
+export function startGateway({ port, engineUrl, password, workspace, lang = "de" }) {
   const target = new URL(engineUrl)
   const auth = "Basic " + Buffer.from(`opencode:${password}`).toString("base64")
   const session = randomBytes(24).toString("base64url")
@@ -70,6 +81,7 @@ export function startGateway({ port, engineUrl, password, workspace }) {
       return
     }
     if (url.pathname.startsWith("/__gotthard/brand/")) return serveBrand(url.pathname.slice(18), res)
+    if (url.pathname === "/__gotthard/help") return serveBrand(`help-${["de", "fr"].includes(lang) ? lang : "en"}.html`, res)
     if (url.pathname === "/site.webmanifest") return serveBrand("site.webmanifest", res)
     if (!sameToken(cookieToken(req), session)) {
       res.writeHead(401, { "content-type": "text/plain; charset=utf-8" }).end("Not logged in. Use the link printed by ./gotthard start")
@@ -85,7 +97,7 @@ export function startGateway({ port, engineUrl, password, workspace }) {
         const chunks = []
         ur.on("data", (c) => chunks.push(c))
         ur.on("end", () => {
-          const body = Buffer.from(brandHtml(Buffer.concat(chunks).toString("utf8"), workspace))
+          const body = Buffer.from(brandHtml(Buffer.concat(chunks).toString("utf8"), workspace, lang))
           const headers = { ...ur.headers, "content-length": body.length }
           delete headers["transfer-encoding"]
           res.writeHead(ur.statusCode, headers).end(body)

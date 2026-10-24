@@ -55,14 +55,13 @@ test("secrets never land in the config file", () => {
   assert.ok(!raw.includes("SECRET-TOKEN-123"))
   assert.ok(raw.includes("{env:GOTTHARD_ENGINE_KEY}"))
   assert.ok(raw.includes("https://api.infomaniak.com/2/ai/1234/openai/v1"))
-  assert.ok(existsSync(join(cfgDir, "skills", "bankauszuege-verbuchen", "SKILL.md")))
+  assert.ok(existsSync(join(cfgDir, "skills", "office-python", "SKILL.md")))
 })
 
 test("disabled skills are not installed", () => {
-  const s = settings({ disabledSkills: ["klientenbrief"] })
+  const s = settings({ disabledSkills: ["office-python"] })
   const { cfgDir } = materialize(s, { key: "", embed: null })
-  assert.ok(!existsSync(join(cfgDir, "skills", "klientenbrief")))
-  assert.ok(existsSync(join(cfgDir, "skills", "eingang-sortieren")))
+  assert.ok(!existsSync(join(cfgDir, "skills", "office-python")))
 })
 
 test("openai-compatible providers share one code path", () => {

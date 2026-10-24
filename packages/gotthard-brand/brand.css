@@ -14,3 +14,7 @@ html[data-theme] {
   --v2-blue-1100: #53130e;
   --v2-blue-1200: #3b0f0b;
 }
+
+a[href*="discord"] {
+  display: none !important;
+}

@@ -16,9 +16,9 @@ NOTES_HEADINGS = {"de": "## Notizen", "fr": "## Notes", "it": "## Note", "en": "
 server = MCPServer(
     name="gotthard-memory",
     instructions=(
-        "Local memory of this office. Use search_documents to find passages in the user's files before "
-        "answering questions about clients, agreements or past work, and cite the returned file paths. "
-        "Use remember to propose a short durable fact for the company memory; the user approves every note."
+        "Local memory of this practice. Use search_documents to find passages in the user's files before "
+        "answering questions about patients, procedures or past correspondence, and cite the returned file paths. "
+        "Use remember to propose a short organisational fact for the practice memory; the user approves every note."
     ),
 )
 indexer = Indexer()
@@ -36,7 +36,7 @@ def lang() -> str:
 def search_documents(query: str, limit: int = 8, folder: str | None = None) -> dict:
     """Search all documents in the workspace (PDF, Word, Excel, text) and return the most relevant
     passages with file path and page/sheet. Use natural-language or keyword queries, e.g.
-    "Keller Honorar Abschluss 2025". Optionally restrict to a folder (relative path)."""
+    "Überweisung Kardiologie Muster". Optionally restrict to a folder (relative path)."""
     indexer.maybe_rescan()
     results = indexer.search(query, limit=max(1, min(limit, 20)), folder=folder)
     st = indexer.status()
@@ -48,9 +48,9 @@ def search_documents(query: str, limit: int = 8, folder: str | None = None) -> d
 
 @server.tool()
 def remember(note: str, subject: str | None = None) -> dict:
-    """Save ONE short, durable fact to the company memory, e.g. subject="Klient Keller",
-    note="Pauschalhonorar CHF 2'400 für den Abschluss 2025 vereinbart (Mail vom 12.03.2026)".
-    The user sees the note and must approve it. Do not store secrets, passwords or bank credentials."""
+    """Save ONE short, durable organisational fact to the practice memory, e.g. subject="Rezepte",
+    note="Wiederholungsrezepte nur nach Rücksprache mit Dr. Meier ausstellen".
+    The user sees the note and must approve it. Never store patients' health data, secrets or passwords."""
     note = " ".join(note.split())
     if not note:
         raise ValueError("Empty note")
