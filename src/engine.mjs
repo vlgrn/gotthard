@@ -2,9 +2,9 @@ import { execFileSync, spawn } from "node:child_process"
 import { randomBytes } from "node:crypto"
 import { appendFileSync, existsSync, mkdirSync } from "node:fs"
 import { createServer } from "node:net"
-import { join } from "node:path"
+import { delimiter, join } from "node:path"
 import { ensureMemory } from "./memory.mjs"
-import { engineHome, mcpCommand, opencodeBin } from "./paths.mjs"
+import { engineHome, mcpCommand, opencodeBin, pythonBinDir } from "./paths.mjs"
 import { materialize } from "./preset.mjs"
 import { embedConfig } from "./providers.mjs"
 import { getSecret } from "./secrets.mjs"
@@ -19,6 +19,7 @@ export function engineEnv(settings, extra = {}) {
   }
   const key = getSecret(settings.provider.kind)
   Object.assign(env, {
+    PATH: [pythonBinDir(), env.PATH].join(delimiter),
     GOTTHARD_WORKSPACE: settings.workspace,
     GOTTHARD_LANG: settings.lang,
     OPENCODE_DISABLE_PROJECT_CONFIG: "1",

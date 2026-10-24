@@ -19,10 +19,11 @@ export function skillLang(lang) {
 }
 
 export function listSkills(lang) {
-  const dir = join(SKILLS_DIR, skillLang(lang))
-  return readdirSync(dir, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
+  return ["common", skillLang(lang)].flatMap((sub) =>
+    readdirSync(join(SKILLS_DIR, sub), { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name),
+  )
 }
 
 export function userSkillsDir() {
@@ -138,7 +139,7 @@ export function materialize(settings, ctx) {
   const skillsOut = join(cfgDir, "skills")
   rmSync(skillsOut, { recursive: true, force: true })
   mkdirSync(skillsOut, { recursive: true })
-  const sources = [join(SKILLS_DIR, skillLang(settings.lang)), userSkillsDir()]
+  const sources = [join(SKILLS_DIR, "common"), join(SKILLS_DIR, skillLang(settings.lang)), userSkillsDir()]
   for (const src of sources) {
     if (!existsSync(src)) continue
     for (const d of readdirSync(src, { withFileTypes: true })) {

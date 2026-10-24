@@ -10,6 +10,7 @@ export const TEMPLATES_DIR = join(SKILLS_DIR, "templates")
 export const PROMPTS_DIR = join(PKG, "gotthard-preset", "prompts")
 export const PLUGIN_FILE = join(PKG, "gotthard-plugin", "gotthard.js")
 export const MCP_DIR = join(PKG, "gotthard-mcp")
+export const BRAND_DIR = join(PKG, "gotthard-brand")
 
 export function appHome() {
   if (process.env.GOTTHARD_HOME) return resolve(process.env.GOTTHARD_HOME)
@@ -31,6 +32,10 @@ export function opencodeBin() {
   const bin = join(REPO, "node_modules", ".bin", platform() === "win32" ? "opencode.cmd" : "opencode")
   if (!existsSync(bin)) throw new Error("opencode engine not installed – run `npm install` in " + REPO)
   return bin
+}
+
+export function pythonBinDir() {
+  return platform() === "win32" ? join(MCP_DIR, ".venv", "Scripts") : join(MCP_DIR, ".venv", "bin")
 }
 
 export function mcpCommand(name) {
